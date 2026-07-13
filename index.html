@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/webp" href="logo.webp">
+  <title>Carino Hash — watch hashing happen</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Red+Hat+Display:wght@700;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent:#eab308; --accent-faint:rgba(234,179,8,0.06); --accent-glow:rgba(234,179,8,0.15);
+      --primary-hover:#fbbf24;
+      --bg-body:#050505; --bg-surface:#0b0b0b; --bg-elev:#0d0d0d; --bg-card:#0f0f0f;
+      --text-main:#f5f5f5; --text-muted:#8a8a8a; --text-dim:#666;
+      --border:#262626; --border-glow:#3a3320;
+      --ok:#22c55e; --danger:#ef4444; --warn:#f59e0b; --info:#38bdf8; --pq:#a78bfa;
+      --sans:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+      --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+      --display:'Red Hat Display',var(--sans);
+    }
+    *{box-sizing:border-box;}
+    html,body{height:100%;}
+    body{font-family:var(--sans);margin:0;background:var(--bg-body);color:var(--text-main);display:flex;flex-direction:column;overflow:hidden;}
+    a{color:var(--accent);}
+    button{font-family:inherit;}
+
+    .shell{flex:1;min-height:0;display:flex;flex-direction:column;max-width:1280px;width:100%;margin:0 auto;padding:12px 18px 14px;gap:11px;}
+
+    /* input bar */
+    .inbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0;}
+    .seg{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;flex-shrink:0;}
+    .seg button{padding:7px 12px;border:none;background:transparent;color:var(--text-muted);font-family:var(--mono);font-size:0.64rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;}
+    .seg button.active{background:var(--accent);color:#050505;}
+    #txt{flex:1;min-width:180px;background:var(--bg-elev);border:1px solid var(--border);border-radius:8px;color:var(--text-main);font-family:var(--mono);font-size:0.82rem;padding:8px 12px;}
+    #txt:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+    .filebtn{display:none;}
+    .filebtn.active{display:inline-flex;}
+    .btn{padding:8px 13px;border:1px solid var(--border);border-radius:7px;font-family:var(--mono);font-weight:700;cursor:pointer;font-size:0.64rem;text-transform:uppercase;letter-spacing:0.05em;transition:0.15s;background:transparent;color:var(--text-main);white-space:nowrap;}
+    .btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-faint);}
+    .btn:disabled{opacity:0.4;cursor:not-allowed;}
+    .btn.primary{background:var(--accent);color:#050505;border-color:var(--accent);}
+    .btn.primary:hover{background:var(--primary-hover);color:#050505;}
+    .btn.mini{padding:3px 8px;font-size:0.55rem;}
+    .inmeta{font-family:var(--mono);font-size:0.64rem;color:var(--text-muted);white-space:nowrap;}
+    .inmeta b{color:var(--text-main);}
+
+    /* panels */
+    .panels{flex:1;min-height:0;position:relative;}
+    .panel{position:absolute;inset:0;display:none;flex-direction:column;min-height:0;}
+    .panel.active{display:flex;}
+
+    /* DIGESTS */
+    .dg-grid{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(370px,1fr));gap:9px;align-content:start;padding-right:4px;}
+    .dg{border:1px solid var(--border);border-radius:9px;background:var(--bg-card);padding:9px 11px;display:flex;flex-direction:column;gap:5px;}
+    .dg-h{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+    .dg-name{font-family:var(--mono);font-weight:700;font-size:0.82rem;}
+    .dg-yr{font-family:var(--mono);font-size:0.56rem;color:var(--text-dim);}
+    .badge{font-family:var(--mono);font-size:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;padding:2px 5px;border-radius:4px;border:1px solid var(--border);white-space:nowrap;}
+    .badge.secure{color:var(--ok);border-color:rgba(34,197,94,0.4);}
+    .badge.legacy{color:var(--warn);border-color:rgba(245,158,11,0.4);}
+    .badge.broken{color:var(--danger);border-color:rgba(239,68,68,0.45);}
+    .badge.checksum{color:var(--info);border-color:rgba(56,189,248,0.4);}
+    .badge.pq{color:var(--pq);border-color:rgba(167,139,250,0.5);}
+    .dg-val{font-family:var(--mono);font-size:0.68rem;word-break:break-all;line-height:1.45;color:var(--accent);background:var(--bg-elev);border:1px solid var(--border);border-radius:6px;padding:6px 8px;}
+    .dg-val.pending{color:var(--text-dim);font-style:italic;}
+    .dg-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+    .dg-expl{font-size:0.68rem;color:var(--text-muted);line-height:1.4;}
+    .dg-pq{font-family:var(--mono);font-size:0.58rem;color:var(--pq);margin-top:1px;letter-spacing:0.02em;}
+    .sig-note{color:var(--pq);font-style:normal;display:block;line-height:1.45;}
+    .sig-note b{color:var(--text-main);}
+    .verify{font-family:var(--mono);font-size:0.56rem;color:var(--ok);}
+    .verify.bad{color:var(--danger);}
+
+    /* STEP-BY-STEP shared visualizer */
+    .viz-wrap{flex:1;min-height:0;display:grid;grid-template-columns:186px 1fr;gap:12px;}
+    @media(max-width:760px){.viz-wrap{grid-template-columns:1fr;}}
+    .algo-list{overflow:auto;display:flex;flex-direction:column;gap:3px;padding-right:3px;}
+    .algo-item{text-align:left;border:1px solid var(--border);border-radius:7px;background:var(--bg-elev);padding:6px 9px;cursor:pointer;transition:0.12s;}
+    .algo-item:hover{border-color:var(--text-muted);}
+    .algo-item.active{border-color:var(--accent);background:var(--accent-faint);}
+    .algo-item .n{font-family:var(--mono);font-size:0.72rem;font-weight:700;color:var(--text-main);}
+    .algo-item.active .n{color:var(--accent);}
+    .algo-item .y{font-family:var(--mono);font-size:0.54rem;color:var(--text-dim);}
+
+    .viz{min-width:0;display:flex;flex-direction:column;gap:9px;min-height:0;}
+    .viz-ctrls{display:flex;flex-wrap:wrap;align-items:center;gap:7px;flex-shrink:0;}
+    .viz-ctrls .prog{font-family:var(--mono);font-size:0.66rem;color:var(--text-muted);margin-left:auto;}
+    .viz-ctrls input[type=range]{accent-color:var(--accent);}
+    .viz-body{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,42vh) minmax(60px,20vh) minmax(70px,1fr);gap:9px;}
+    @media(max-width:760px){.viz-body{grid-template-columns:1fr;grid-template-rows:auto minmax(90px,26vh) minmax(90px,1fr);}}
+    .vpanel{border:1px solid var(--border);border-radius:9px;background:var(--bg-elev);padding:9px 11px;min-height:0;overflow:auto;}
+    .vpanel h4{margin:0 0 8px;font-family:var(--mono);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--accent);font-weight:700;}
+    .vpanel.detail{grid-column:1;}
+    .vpanel.state{grid-column:2;}
+    .vpanel.data{grid-column:1 / -1;grid-row:2;}
+    .vpanel.log{grid-column:1 / -1;grid-row:3;}
+    @media(max-width:760px){.vpanel.detail,.vpanel.state,.vpanel.data,.vpanel.log{grid-column:1;grid-row:auto;}}
+
+    .note{font-size:0.76rem;color:var(--text-muted);line-height:1.5;margin-bottom:9px;}
+    .note b{color:var(--text-main);}
+    .rd{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-family:var(--mono);font-size:0.72rem;}
+    .rd .k{color:var(--text-dim);white-space:nowrap;}
+    .rd .v{color:var(--text-main);word-break:break-all;}
+    .rd .v.hi{color:var(--accent);}
+    .regs{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;}
+    .rcell{border:1px solid var(--border);border-radius:6px;padding:5px 6px;background:#0a0a0a;transition:0.2s;}
+    .rcell .k{font-family:var(--mono);font-size:0.56rem;color:var(--text-dim);}
+    .rcell .v{font-family:var(--mono);font-size:0.72rem;color:var(--text-main);word-break:break-all;}
+    .rcell.hot{border-color:var(--accent);background:rgba(234,179,8,0.09);box-shadow:0 0 12px var(--accent-glow);}
+    .rcell.hot .v{color:var(--accent);}
+    .grid-cells{display:grid;gap:3px;}
+    .gcell{font-family:var(--mono);font-size:0.5rem;text-align:center;padding:3px 1px;border-radius:3px;background:#0a0a0a;border:1px solid #1a1a1a;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .gcell.on{color:var(--text-muted);border-color:#333;}
+    .gcell.cur{background:var(--accent);color:#050505;border-color:var(--accent);font-weight:700;}
+    .gcell.one{background:rgba(234,179,8,0.15);color:var(--accent);border-color:var(--accent);}
+    .gcell.len{background:rgba(56,189,248,0.12);color:var(--info);border-color:rgba(56,189,248,0.4);}
+    .oplog{font-family:var(--mono);font-size:0.6rem;line-height:1.55;color:var(--text-muted);white-space:pre;}
+
+    /* Steps button + big-file notice on cards */
+    .dg-foot .btn.steps{border-color:var(--border-glow);color:var(--accent);}
+    .dg-foot .btn.steps:hover{background:var(--accent);color:#050505;border-color:var(--accent);}
+    .big-note{color:var(--warn);font-style:normal;display:block;margin-bottom:6px;line-height:1.4;}
+    .dg-val .btn{display:inline-block;margin-top:2px;}
+
+    /* Modal overlay */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.74);backdrop-filter:blur(3px);z-index:3000;display:none;align-items:center;justify-content:center;padding:20px;}
+    .modal-backdrop.open{display:flex;}
+    .modal{background:var(--bg-surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:1080px;height:min(90vh,940px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,0.75);}
+    .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:15px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+    .modal-head h2{margin:0;font-family:var(--display);font-size:1.25rem;color:var(--accent);}
+    .modal-head h2 .yr{font-family:var(--mono);font-size:0.7rem;color:var(--text-dim);margin-left:8px;-webkit-text-fill-color:var(--text-dim);}
+    .modal-sub{font-family:var(--mono);font-size:0.62rem;color:var(--text-muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.05em;}
+    .modal-intro{padding:12px 20px;color:var(--text-muted);font-size:0.86rem;line-height:1.65;border-bottom:1px solid var(--border);background:var(--accent-faint);flex-shrink:0;}
+    .modal-intro b{color:var(--text-main);}
+    .modal-legend{padding:9px 20px;font-size:0.68rem;color:var(--text-dim);line-height:1.5;border-bottom:1px solid var(--border);flex-shrink:0;}
+    .modal-legend b{color:var(--text-muted);}
+    .modal-viz{flex:1;min-height:0;padding:12px 20px 16px;display:flex;flex-direction:column;gap:9px;}
+    .math{margin-top:9px;font-family:var(--mono);font-size:0.72rem;color:var(--info);background:rgba(56,189,248,0.06);border-left:2px solid rgba(56,189,248,0.45);padding:7px 10px;border-radius:0 6px 6px 0;line-height:1.5;}
+    .math .lbl{display:block;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;font-size:0.56rem;margin-bottom:3px;}
+    @media(max-width:760px){.modal{height:94vh;}}
+
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(24px);background:var(--ok);color:#052e13;font-family:var(--mono);font-weight:700;font-size:0.7rem;padding:8px 15px;border-radius:20px;opacity:0;pointer-events:none;transition:0.25s;z-index:2000;}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  </style>
+</head>
+<body>
+
+  <div class="shell">
+    <!-- INPUT -->
+    <div class="inbar">
+      <div class="seg" id="inSeg">
+        <button class="active" data-in="text">Text</button>
+        <button data-in="file">File</button>
+      </div>
+      <input type="text" id="txt" spellcheck="false" value="abc" placeholder="Type anything…">
+      <button class="btn filebtn" id="fileBtn">📄 Choose file…</button>
+      <input type="file" id="fileInput" hidden>
+      <span class="inmeta" id="inMeta"></span>
+    </div>
+
+    <div class="panels">
+      <!-- DIGESTS -->
+      <div class="panel active" id="panel-digests">
+        <div class="dg-grid" id="dgGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEPS MODAL -->
+  <div class="modal-backdrop" id="stepsModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div><h2 id="mTitle"></h2><div class="modal-sub" id="mSub"></div></div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <button class="btn" id="mPrint" title="Print / save these steps as a PDF">🖨 Print steps</button>
+          <button class="btn" id="mClose">✕ Close</button>
+        </div>
+      </div>
+      <div class="modal-intro" id="mIntro"></div>
+      <div class="modal-legend">You're watching a real computation on <b id="mInput"></b>. <b>State</b> = the algorithm's scratch memory · <b>Data</b> = your message being processed · <b>Log</b> = a running transcript. Use Step to go one operation at a time, or Play to watch it run.</div>
+      <div class="viz modal-viz">
+        <div class="viz-ctrls">
+          <button class="btn primary" id="mPlay">▶ Play</button>
+          <button class="btn" id="mStep">⏭ Step</button>
+          <button class="btn" id="mBack">⏮ Back</button>
+          <button class="btn" id="mReset">Reset</button>
+          <label style="font-family:var(--mono);font-size:0.62rem;color:var(--text-muted);display:flex;align-items:center;gap:5px;">Speed
+            <input type="range" id="mSpeed" min="1" max="60" value="10" style="width:96px;"></label>
+          <span class="prog" id="mProg"></span>
+        </div>
+        <div class="viz-body">
+          <div class="vpanel detail"><h4 id="mDetailH">What's happening</h4><div class="note" id="mNote"></div><div class="math" id="mMath" style="display:none"></div><div class="rd" id="mRd"></div></div>
+          <div class="vpanel state"><h4>State — the working memory</h4><div class="regs" id="mRegs"></div></div>
+          <div class="vpanel data"><h4 id="mDataH">Data</h4><div id="mData"></div></div>
+          <div class="vpanel log"><h4>Operation log</h4><div class="oplog" id="mLog"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ==========================================================================
+   Carino Hash — from-scratch, instrumented hash primitives + a single unified
+   step-by-step engine that animates every algorithm (historical checksums →
+   MD2/MD4/MD5 → SHA-1/2/3 → a hash-based Lamport post-quantum signature).
+   ========================================================================== */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+function toast(m){ const t=$('#toast'); t.textContent=m; t.className='toast show'; clearTimeout(t._to); t._to=setTimeout(()=>t.className='toast',1500); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtSize(n){ if(n<1024) return n+' B'; const u=['KB','MB','GB']; let i=-1; do{n/=1024;i++;}while(n>=1024&&i<u.length-1); return n.toFixed(n<10?2:1)+' '+u[i]; }
+const hb  = x => (x&0xff).toString(16).padStart(2,'0');
+const h16 = x => (x&0xffff).toString(16).padStart(4,'0');
+const h32 = x => (x>>>0).toString(16).padStart(8,'0');
+const h64 = x => x.toString(16).padStart(16,'0');
+function bytesToHex(b){ let o=''; for(let i=0;i<b.length;i++) o+=b[i].toString(16).padStart(2,'0'); return o; }
+function hexToBytes(h){ const b=new Uint8Array(h.length/2); for(let i=0;i<b.length;i++) b[i]=parseInt(h.substr(i*2,2),16); return b; }
+
+/* ---- step recorder ---- */
+function mkRec(cap){ return {steps:[], cap:cap||120, trunc:false}; }
+function step(rec, o){ if(!rec) return; if(rec.steps.length>=rec.cap){ rec.trunc=true; return; } rec.steps.push(o); }
+
+/* ==========================================================================
+   Historical checksums (the "first ones ever")
+   ========================================================================== */
+function checksum8(bytes, rec){
+  let sum=0;
+  step(rec,{phase:'start',note:'The oldest “hash” there is: add up every byte and keep the low 8 bits. Used on punched paper tape and early serial links to catch single‑bit errors.',regs:[{k:'sum',v:'00'}],log:'sum = 00'});
+  for(let i=0;i<bytes.length;i++){ sum=(sum+bytes[i])&0xff;
+    step(rec,{phase:'byte '+i,note:`Take the next byte — the number <b>${bytes[i]}</b> (hex 0x${hb(bytes[i])}) — and add it to the running total. If the total passes 255 it wraps back around.`,math:`sum ← (sum + b<sub>${i}</sub>) mod 2<sup>8</sup> = (${(sum-bytes[i]+256)&0xff} + ${bytes[i]}) mod 256 = ${sum}`,regs:[{k:'i',v:i},{k:'byte',v:hb(bytes[i])},{k:'sum',v:hb(sum),hot:true}],log:`+ ${hb(bytes[i])}  ->  sum=${hb(sum)}`}); }
+  step(rec,{phase:'the digest',note:`That’s every byte folded in. There’s no extra finishing step here — the running total <b>is</b> the digest. It’s the sum of all ${bytes.length} byte value${bytes.length===1?'':'s'}, wrapped to stay within 8 bits. Change any single byte and this number almost always moves, which is the whole point.`,math:`digest = ( b<sub>0</sub> + b<sub>1</sub> + … + b<sub>${Math.max(0,bytes.length-1)}</sub> ) mod 256 = <b>0x${hb(sum)}</b>`,regs:[{k:'digest',v:hb(sum),hot:true}],log:'digest = '+hb(sum)});
+  return hb(sum);
+}
+function bsdsum(bytes, rec){
+  let c=0;
+  step(rec,{phase:'start',note:'The classic Unix <b>sum</b> (BSD). For each byte: rotate the 16‑bit accumulator right by one, then add the byte. The rotation spreads bits so reordering data changes the result.',regs:[{k:'sum',v:'0000'}],log:'sum = 0000'});
+  for(let i=0;i<bytes.length;i++){ c=((c>>1)|((c&1)<<15))&0xffff; c=(c+bytes[i])&0xffff;
+    step(rec,{phase:'byte '+i,note:`Rotate right, then add <b>0x${hb(bytes[i])}</b>.`,regs:[{k:'i',v:i},{k:'byte',v:hb(bytes[i])},{k:'sum',v:h16(c),hot:true}],log:`ror + ${hb(bytes[i])}  ->  ${h16(c)}`}); }
+  step(rec,{phase:'the digest',note:`Once the last byte is folded in, the 16‑bit accumulator you’ve been spinning and adding to <b>is</b> the digest — no finishing step. Because every byte was rotated before adding, the same bytes in a different order give a different answer.`,math:`digest = accumulator after the final rotate‑and‑add = <b>0x${h16(c)}</b>`,regs:[{k:'digest',v:h16(c),hot:true}],log:'digest = '+h16(c)});
+  return h16(c);
+}
+function fletcher16(bytes, rec){
+  let s1=0,s2=0;
+  step(rec,{phase:'start',note:'<b>Fletcher‑16</b> (1970s) keeps two running sums: s1 adds each byte, s2 adds each s1. Position now matters, so it catches transpositions a plain checksum misses.',regs:[{k:'s1',v:'00'},{k:'s2',v:'00'}],log:'s1=00 s2=00'});
+  for(let i=0;i<bytes.length;i++){ s1=(s1+bytes[i])%255; s2=(s2+s1)%255;
+    step(rec,{phase:'byte '+i,note:`s1 += 0x${hb(bytes[i])} (mod 255); s2 += s1 (mod 255).`,regs:[{k:'i',v:i},{k:'byte',v:hb(bytes[i])},{k:'s1',v:hb(s1),hot:true},{k:'s2',v:hb(s2),hot:true}],log:`s1=${hb(s1)} s2=${hb(s2)}`}); }
+  step(rec,{phase:'the digest',note:`Now glue the two running sums together into one 16‑bit number: <b>s2</b> becomes the top byte and <b>s1</b> the bottom byte. s1 is a plain total; s2 is a “total of running totals”, so it reacts to <em>where</em> each byte sits — that’s what makes Fletcher stronger than a single sum.`,math:`digest = (s2 × 256) + s1 = (0x${hb(s2)} × 256) + 0x${hb(s1)} = <b>0x${h16((s2<<8)|s1)}</b>`,regs:[{k:'s2 (high)',v:hb(s2)},{k:'s1 (low)',v:hb(s1)},{k:'digest',v:h16((s2<<8)|s1),hot:true}],log:'digest = '+h16((s2<<8)|s1)});
+  return h16((s2<<8)|s1);
+}
+function adler32(bytes, rec){
+  let a=1,b=0; const M=65521;
+  step(rec,{phase:'start',note:'<b>Adler‑32</b> (1995, used in zlib) is Fletcher scaled up and reduced mod the prime 65521. Fast, but weak — only a checksum.',regs:[{k:'a',v:'00000001'},{k:'b',v:'00000000'}],log:'a=1 b=0'});
+  for(let i=0;i<bytes.length;i++){ a=(a+bytes[i])%M; b=(b+a)%M;
+    step(rec,{phase:'byte '+i,note:`Add this byte to running total <b>a</b>, then add the new <b>a</b> into the second total <b>b</b>. Because b accumulates a over and over, early bytes influence it more — that’s what makes order matter.`,math:`a ← (a + b<sub>i</sub>) mod 65521<br>b ← (b + a) mod 65521`,regs:[{k:'i',v:i},{k:'byte',v:hb(bytes[i])},{k:'a',v:h32(a),hot:true},{k:'b',v:h32(b),hot:true}],log:`a=${a} b=${b}`}); }
+  step(rec,{phase:'the digest',note:`Pack the two 16‑bit sums into one 32‑bit number: <b>b</b> in the upper half, <b>a</b> in the lower half. (a started at 1, not 0, so that empty input still produces a non‑zero digest.) This is the exact checksum stored inside every zlib/PNG stream.`,math:`digest = (b × 65536) + a = <b>0x${h32(((b<<16)|a)>>>0)}</b>`,regs:[{k:'b (high)',v:h16(b)},{k:'a (low)',v:h16(a)},{k:'digest',v:h32(((b<<16)|a)>>>0),hot:true}],log:'digest = '+h32(((b<<16)|a)>>>0)});
+  return h32(((b<<16)|a)>>>0);
+}
+function pearson(bytes, rec){
+  let h=0;
+  step(rec,{phase:'start',note:'<b>Pearson hashing</b> (1990): a single byte walks through a fixed 256‑entry permutation table T. h = T[h XOR byte]. Tiny, fast, and surprisingly well‑mixed for an 8‑bit output.',regs:[{k:'h',v:'00'}],log:'h = 00'});
+  for(let i=0;i<bytes.length;i++){ const idx=(h^bytes[i])&0xff; h=PI_SUBST[idx];
+    step(rec,{phase:'byte '+i,note:`idx = h XOR 0x${hb(bytes[i])} = 0x${hb(idx)}; h = T[idx] = 0x${hb(h)}.`,regs:[{k:'i',v:i},{k:'byte',v:hb(bytes[i])},{k:'idx',v:hb(idx)},{k:'h',v:hb(h),hot:true}],log:`T[${hb(idx)}] -> ${hb(h)}`}); }
+  step(rec,{phase:'the digest',note:`After the last letter, wherever the walk has landed in the table <b>is</b> the digest — a single byte. Every step depended on the one before it, so the final position folds in the whole message, not just the last byte.`,math:`digest = final table position = <b>0x${hb(h)}</b>`,regs:[{k:'digest',v:hb(h),hot:true}],log:'digest = '+hb(h)});
+  return hb(h);
+}
+const CRC_TABLE=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); t[n]=c>>>0; } return t; })();
+function crc32(bytes, rec){
+  let c=0xFFFFFFFF;
+  step(rec,{phase:'start',note:'<b>CRC‑32</b> treats the data as one huge binary polynomial and divides by a fixed generator, keeping the remainder. The 256‑entry table folds 8 bits of division into one lookup. Great at spotting burst errors — but not cryptographic.',regs:[{k:'crc',v:'ffffffff'}],log:'crc = ffffffff'});
+  for(let i=0;i<bytes.length;i++){ c=CRC_TABLE[(c^bytes[i])&0xFF]^(c>>>8);
+    step(rec,{phase:'byte '+i,note:`crc = table[(crc XOR 0x${hb(bytes[i])}) &amp; 0xFF] XOR (crc >> 8).`,regs:[{k:'i',v:i},{k:'byte',v:hb(bytes[i])},{k:'crc',v:h32(c),hot:true}],log:`byte ${hb(bytes[i])} -> ${h32(c)}`}); }
+  const fin=(c^0xFFFFFFFF)>>>0;
+  step(rec,{phase:'the digest',note:`The running value now holds the remainder of dividing your whole message (as one giant binary polynomial) by CRC‑32’s fixed generator. One last touch: flip every bit (XOR with all‑ones) — a standard trick so that trailing zero bytes still change the result. That flipped remainder is the CRC.`,math:`digest = ( remainder ) XOR 0xFFFFFFFF = <b>0x${h32(fin)}</b>`,regs:[{k:'remainder',v:h32(c>>>0)},{k:'digest',v:h32(fin),hot:true}],log:'digest = '+h32(fin)});
+  return h32(fin);
+}
+
+/* ==========================================================================
+   MD2 (1989) — the first of the MD family
+   ========================================================================== */
+const PI_SUBST=[41,46,67,201,162,216,124,1,61,54,84,161,236,240,6,19,98,167,5,243,192,199,115,140,152,147,43,217,188,76,130,202,30,155,87,60,253,212,224,22,103,66,111,24,138,23,229,18,190,78,196,214,218,158,222,73,160,251,245,142,187,47,238,122,169,104,121,145,21,178,7,63,148,194,16,137,11,34,95,33,128,127,93,154,90,144,50,39,53,62,204,231,191,247,151,3,255,25,48,179,72,165,181,209,215,94,146,42,172,86,170,198,79,184,56,210,150,164,125,182,118,252,107,226,156,116,4,241,69,157,112,89,100,113,135,32,134,91,207,101,230,45,168,2,27,96,37,173,174,176,185,246,28,70,97,105,52,64,126,15,85,71,163,35,221,81,175,58,195,92,249,206,186,197,234,38,44,83,13,110,133,40,132,9,211,223,205,244,65,129,77,82,106,220,55,200,108,193,171,250,36,225,123,8,12,189,177,74,120,136,149,139,227,99,232,109,233,203,213,254,59,0,29,57,242,239,183,14,102,88,208,228,166,119,114,248,235,117,75,10,49,68,80,180,143,237,31,26,219,153,141,51,159,17,131,20];
+function md2(bytes, rec){
+  const n=bytes.length, padVal=16-(n%16); const m=new Uint8Array(n+padVal); m.set(bytes); for(let i=n;i<m.length;i++) m[i]=padVal;
+  if(rec) step(rec,{phase:'pad',note:`MD2 works on <b>16‑byte blocks</b>. Pad with ${padVal} byte(s) each equal to 0x${hb(padVal)} so the length is a multiple of 16.`,regs:[{k:'len',v:n},{k:'padded',v:m.length}],log:`pad +${padVal} -> ${m.length} bytes`});
+  // checksum
+  const C=new Uint8Array(16); let L=0;
+  for(let b=0;b<m.length;b+=16){ for(let j=0;j<16;j++){ const c=m[b+j]; C[j]^=PI_SUBST[(c^L)&0xff]; L=C[j]; } }
+  const withC=new Uint8Array(m.length+16); withC.set(m); withC.set(C,m.length);
+  if(rec) step(rec,{phase:'checksum',note:'Compute a 16‑byte checksum by running every byte through the π substitution table, and append it. This is what makes MD2 more than a plain checksum.',regs:C.length?[...C].slice(0,8).map((v,i)=>({k:'C'+i,v:hb(v)})):[],grid:{title:'16‑byte checksum C',cols:16,cells:[...C].map(v=>({v:hb(v),cls:'on'}))},log:'checksum = '+bytesToHex(C)});
+  // digest
+  const X=new Uint8Array(48);
+  const nb=withC.length/16;
+  for(let b=0;b<nb;b++){
+    for(let j=0;j<16;j++){ X[16+j]=withC[b*16+j]; X[32+j]=X[16+j]^X[j]; }
+    let t=0;
+    for(let r=0;r<18;r++){
+      for(let k=0;k<48;k++){ t=X[k]^=PI_SUBST[t]; }
+      t=(t+r)&0xff;
+      if(rec && b<2){ step(rec,{phase:`blk ${b} · round ${r}`,note:`Each of the 48 state bytes is XORed with a value looked up in the π table, and the result carries over as <b>t</b> into the next byte. This runs 18 passes over the whole state; after each pass t is nudged by the pass number so the passes never repeat.`,math:`for k = 0…47:  X[k] ← X[k] ⊕ π[t],  then t ← X[k].   After the pass:  t ← (t + round) mod 256`,regs:[{k:'block',v:b},{k:'round',v:r},{k:'t',v:hb(t),hot:true}],grid:{title:'48‑byte state X (first 16 = digest)',cols:16,cells:[...X].map((v,i)=>({v:hb(v),cls:i<16?'cur':'on'}))},log:`blk${b} r${String(r).padStart(2,'0')}  t=${hb(t)}`}); }
+    }
+  }
+  const dg=bytesToHex(X.slice(0,16));
+  if(rec) step(rec,{phase:'the digest',note:`Once every block (including the appended checksum block) has been stirred in, the answer is simply the <b>first 16 bytes of the 48‑byte state X</b> — no summing or truncation of a bigger value, just the top third of the pot. The other 32 bytes were scratch space that helped the mixing.`,math:`digest = X[0 … 15] = <b>${dg}</b>`,regs:[],grid:{title:'digest = first 16 bytes of X',cols:16,cells:[...X.slice(0,16)].map(v=>({v:hb(v),cls:'one'}))},log:'digest = '+dg});
+  return dg;
+}
+
+/* ==========================================================================
+   Merkle–Damgård padding helpers
+   ========================================================================== */
+function padMD(bytes, lenLittleEndian){
+  const ml=bytes.length*8, withOne=bytes.length+1, k=((56-(withOne%64))%64+64)%64, total=bytes.length+1+k+8;
+  const m=new Uint8Array(total); m.set(bytes); m[bytes.length]=0x80; const dv=new DataView(m.buffer);
+  if(lenLittleEndian){ dv.setUint32(total-8, ml>>>0, true); dv.setUint32(total-4, Math.floor(ml/4294967296)>>>0, true); }
+  else { dv.setUint32(total-8, Math.floor(ml/4294967296)>>>0, false); dv.setUint32(total-4, ml>>>0, false); }
+  return {m, dv, total, bitlen:ml};
+}
+function paddingGrid(msgBytes, bitlen, be){
+  const cells=[]; const show=Math.min(msgBytes.length,24);
+  for(let i=0;i<show;i++) cells.push({v:hb(msgBytes[i]),cls:'on'});
+  if(msgBytes.length>show) cells.push({v:'…',cls:''});
+  cells.push({v:'80',cls:'one'}); cells.push({v:'00…',cls:''});
+  const dv=new DataView(new ArrayBuffer(8));
+  if(be){ dv.setUint32(0,Math.floor(bitlen/4294967296)>>>0,false); dv.setUint32(4,bitlen>>>0,false); }
+  else { dv.setUint32(0,bitlen>>>0,true); dv.setUint32(4,Math.floor(bitlen/4294967296)>>>0,true); }
+  for(let i=0;i<8;i++) cells.push({v:hb(dv.getUint8(i)),cls:'len'});
+  return {title:`padded message · 0x80 marker + 64‑bit length (${be?'big':'little'}‑endian)`,cols:12,cells};
+}
+
+/* ==========================================================================
+   MD4 (1990) and MD5 (1992)
+   ========================================================================== */
+function md4(bytes, rec){
+  const rol=(x,c)=>((x<<c)|(x>>>(32-c)))>>>0;
+  const {dv,total,bitlen}=padMD(bytes,true);
+  if(rec) step(rec,{phase:'pad',note:'<b>MD4</b> (1990) — Rivest’s speed‑focused design and the blueprint for MD5, SHA‑0 and SHA‑1. Four 32‑bit registers, 48 operations in 3 rounds. Broken since 1995.',regs:[],grid:paddingGrid(bytes,bitlen,false),log:`padded to ${total} bytes`});
+  let A=0x67452301,B=0xefcdab89,C=0x98badcfe,D=0x10325476;
+  const F=(x,y,z)=>(x&y)|(~x&z), G=(x,y,z)=>(x&y)|(x&z)|(y&z), H=(x,y,z)=>x^y^z;
+  const nb=total/64;
+  for(let bi=0;bi<nb;bi++){
+    const M=[]; for(let j=0;j<16;j++) M[j]=dv.getUint32(bi*64+j*4,true);
+    let a=A,b=B,c=C,d=D; let op=0;
+    const r1=[3,7,11,19]; for(let i=0;i<16;i++){ const s=r1[i%4]; const v=rol((a+F(b,c,d)+M[i])>>>0,s); a=d;d=c;c=b;b=v;
+      if(rec&&bi<1) traceMD(rec,'R1',op++,i,{a,b,c,d}); }
+    const o2=[0,4,8,12,1,5,9,13,2,6,10,14,3,7,11,15], r2=[3,5,9,13]; for(let i=0;i<16;i++){ const k=o2[i], s=r2[i%4]; const v=rol((a+G(b,c,d)+M[k]+0x5a827999)>>>0,s); a=d;d=c;c=b;b=v;
+      if(rec&&bi<1) traceMD(rec,'R2',op++,k,{a,b,c,d}); }
+    const o3=[0,8,4,12,2,10,6,14,1,9,5,13,3,11,7,15], r3=[3,9,11,15]; for(let i=0;i<16;i++){ const k=o3[i], s=r3[i%4]; const v=rol((a+H(b,c,d)+M[k]+0x6ed9eba1)>>>0,s); a=d;d=c;c=b;b=v;
+      if(rec&&bi<1) traceMD(rec,'R3',op++,k,{a,b,c,d}); }
+    A=(A+a)>>>0;B=(B+b)>>>0;C=(C+c)>>>0;D=(D+d)>>>0;
+  }
+  const dg=[A,B,C,D].map(x=>[0,8,16,24].map(sh=>hb(x>>>sh)).join('')).join('');
+  if(rec) step(rec,{phase:'the digest',note:`<b>1 · Fold in.</b> Add the scrambled registers back onto the running totals A,B,C,D.<br><br><b>2 · Write out little‑endian.</b> As in MD5, each 32‑bit total is emitted <em>lowest byte first</em>, so a total like 0x<b>67452301</b> becomes the bytes <b>01 23 45 67</b> in the digest. The table shows each register's reversed bytes. Four × 32 bits = the 128‑bit MD4 digest. (MD5 later added a fourth round and per‑step constants to patch MD4's weaknesses — which is why the two look so alike right down to this final step.)`,math:`digest = A ∥ B ∥ C ∥ D, each total's 4 bytes reversed (low byte first)`,regs:[{k:'A',v:h32(A),hot:true},{k:'B',v:h32(B),hot:true},{k:'C',v:h32(C),hot:true},{k:'D',v:h32(D),hot:true}],rows:[A,B,C,D].map((x,i)=>['ABCD'[i]+' = 0x'+h32(x)+' → bytes', [0,8,16,24].map(sh=>hb(x>>>sh)).join(' '), true]),log:'digest = '+dg});
+  return dg;
+}
+function traceMD(rec,round,op,k,st){ step(rec,{phase:`${round} · op ${op}`,note:`One register is replaced by a rotated, nonlinear mix of the other three plus one message word. The <b>mixing function changes across the three rounds</b> (R1 uses “choose”, R2 “majority”, R3 “XOR”); the message word being fed in (below) changes every operation.`,math:`one register ← ( register + f(others) + M + roundConstant ) ⋘ s  (mod 2³²)`,regs:[{k:'a',v:h32(st.a),hot:true},{k:'b',v:h32(st.b),hot:true},{k:'c',v:h32(st.c),hot:true},{k:'d',v:h32(st.d),hot:true}],rows:[['message word','M['+k+']']],log:`${round} op${String(op).padStart(2,'0')} M[${k}]  a=${h32(st.a)} b=${h32(st.b)}`}); }
+
+function md5(bytes, rec){
+  const rol=(x,c)=>((x<<c)|(x>>>(32-c)))>>>0;
+  const s=[7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+  const K=[]; for(let i=0;i<64;i++) K[i]=(Math.floor(Math.abs(Math.sin(i+1))*4294967296))>>>0;
+  const {dv,total,bitlen}=padMD(bytes,true);
+  if(rec) step(rec,{phase:'pad',note:'<b>MD5</b> (1992). Four 32‑bit registers, <b>64 operations</b> in 4 rounds over each 512‑bit block. Once ubiquitous; collisions have been practical since 2004.',regs:[],grid:paddingGrid(bytes,bitlen,false),log:`padded to ${total} bytes`});
+  let a0=0x67452301,b0=0xefcdab89,c0=0x98badcfe,d0=0x10325476;
+  const nb=total/64;
+  for(let off=0,bi=0;off<total;off+=64,bi++){
+    const M=[]; for(let j=0;j<16;j++) M[j]=dv.getUint32(off+j*4,true);
+    let A=a0,B=b0,C=c0,D=d0;
+    for(let i=0;i<64;i++){ let F,g;
+      if(i<16){F=(B&C)|(~B&D);g=i;} else if(i<32){F=(D&B)|(~D&C);g=(5*i+1)%16;}
+      else if(i<48){F=B^C^D;g=(3*i+5)%16;} else {F=C^(B|~D);g=(7*i)%16;}
+      F=(F+A+K[i]+M[g])>>>0; A=D;D=C;C=B; B=(B+rol(F,s[i]))>>>0;
+      if(rec&&bi<1) step(rec,{phase:`round ${(i>>4)+1} · op ${i}`,note:`A nonlinear function of (B,C,D) is added to A along with a fixed constant and one message word, rotated left, and added into B; then the four registers rotate roles. The <b>function and the rotation amount change each of the four quarters</b> — the constant and message word (shown below) change every operation.`,math:`B ← B + ( (A + F(B,C,D) + K + M) ⋘ s )  (mod 2³²)`,regs:[{k:'A',v:h32(A),hot:true},{k:'B',v:h32(B),hot:true},{k:'C',v:h32(C),hot:true},{k:'D',v:h32(D),hot:true}],rows:[['K[i]',h32(K[i])],['M[g]',h32(M[g]),true],['⋘ s',s[i]]],log:`op${String(i).padStart(2,'0')} M[${g}]  B=${h32(B)}`}); }
+    a0=(a0+A)>>>0;b0=(b0+B)>>>0;c0=(c0+C)>>>0;d0=(d0+D)>>>0;
+  }
+  const dg=[a0,b0,c0,d0].map(x=>[0,8,16,24].map(sh=>hb(x>>>sh)).join('')).join('');
+  if(rec) step(rec,{phase:'the digest',note:`<b>1 · Fold in.</b> Add the four scrambled registers back onto the running totals A,B,C,D.<br><br><b>2 · Write out — but backwards, one byte at a time.</b> Here's the MD‑family quirk that trips everyone up: each 32‑bit total is emitted <b>little‑endian</b>, meaning its <em>lowest</em> byte is printed first. So a total like 0x<b>67452301</b> does <em>not</em> appear as “67452301” in the digest — its four bytes are reversed to <b>01 23 45 67</b>. The table below shows each register and the reversed bytes it actually contributes. Do that for all four (A then B then C then D) and you get the 128‑bit digest.`,math:`digest = A ∥ B ∥ C ∥ D, each total's 4 bytes reversed (low byte first)`,regs:[{k:'A',v:h32(a0),hot:true},{k:'B',v:h32(b0),hot:true},{k:'C',v:h32(c0),hot:true},{k:'D',v:h32(d0),hot:true}],rows:[a0,b0,c0,d0].map((x,i)=>['ABCD'[i]+' = 0x'+h32(x)+' → bytes', [0,8,16,24].map(sh=>hb(x>>>sh)).join(' '), true]),log:'digest = '+dg});
+  return dg;
+}
+
+/* ==========================================================================
+   SHA-1 (1995)
+   ========================================================================== */
+function sha1(bytes, rec){
+  const rol=(x,n)=>((x<<n)|(x>>>(32-n)))>>>0;
+  const {dv,total,bitlen}=padMD(bytes,false);
+  if(rec) step(rec,{phase:'pad',note:'<b>SHA‑1</b> (1995). Five registers, <b>80 rounds</b>. A real collision (“SHATTERED”) was produced in 2017 — deprecated for signatures.',regs:[],grid:paddingGrid(bytes,bitlen,true),log:`padded to ${total} bytes`});
+  let h0=0x67452301,h1=0xEFCDAB89,h2=0x98BADCFE,h3=0x10325476,h4=0xC3D2E1F0;
+  const nb=total/64;
+  for(let bi=0;bi<nb;bi++){
+    const w=new Array(80); for(let t=0;t<16;t++) w[t]=dv.getUint32(bi*64+t*4,false);
+    for(let t=16;t<80;t++) w[t]=rol(w[t-3]^w[t-8]^w[t-14]^w[t-16],1);
+    let a=h0,b=h1,c=h2,d=h3,e=h4;
+    for(let t=0;t<80;t++){ let f,k;
+      if(t<20){f=(b&c)|((~b)&d);k=0x5A827999;} else if(t<40){f=b^c^d;k=0x6ED9EBA1;}
+      else if(t<60){f=(b&c)|(b&d)|(c&d);k=0x8F1BBCDC;} else {f=b^c^d;k=0xCA62C1D6;}
+      const tmp=(rol(a,5)+f+e+k+w[t])>>>0; e=d;d=c;c=rol(b,30);b=a;a=tmp;
+      if(rec&&bi<1) step(rec,{phase:`round ${t} of 80`,note:`New a = (a rotated left 5) + f(b,c,d) + e + a constant K + one scheduled word W; then b rotates left 30 and everything shifts down. The nonlinear function <b>f</b> and the constant <b>K</b> both switch every 20 rounds — that “f” value below is the only thing changing between the four phases.`,math:`a ← (a ⋘ 5) + f(b,c,d) + e + K + W<sub>t</sub>,  then b ← b ⋘ 30  (mod 2³²)`,regs:[{k:'a',v:h32(a),hot:true},{k:'b',v:h32(b),hot:true},{k:'c',v:h32(c),hot:true},{k:'d',v:h32(d),hot:true},{k:'e',v:h32(e),hot:true}],rows:[['f',['Ch (choose)','Parity (XOR)','Maj (majority)','Parity (XOR)'][t/20|0]],['K',h32(k)],['W[t]',h32(w[t]),true]],grid:t<64?wGrid(w,t,80):undefined,log:`t${String(t).padStart(2,'0')} W=${h32(w[t])}  a=${h32(a)}`}); }
+    h0=(h0+a)>>>0;h1=(h1+b)>>>0;h2=(h2+c)>>>0;h3=(h3+d)>>>0;h4=(h4+e)>>>0;
+  }
+  const dg=[h0,h1,h2,h3,h4].map(h32).join('');
+  if(rec) step(rec,{phase:'the digest',note:`Two steps turn the state into the answer.<br><br><b>1 · Fold in.</b> The five scratchpads a…e finished holding this block's scrambled result; add each back onto its running total — h0 += a, h1 += b, … h4 += e. (Another block would carry on from these updated totals.)<br><br><b>2 · Lay them end to end.</b> Print each 32‑bit total as <b>8 hex characters</b> and glue them together, h0 first. Five × 8 = 40 hex characters = 160 bits. No XOR, no truncation — the table shows which total occupies which slice of the answer.`,math:`digest = h0 ∥ h1 ∥ h2 ∥ h3 ∥ h4  (each 8 hex digits, big‑endian)`,regs:[{k:'h0',v:h32(h0),hot:true},{k:'h1',v:h32(h1),hot:true},{k:'h2',v:h32(h2),hot:true},{k:'h3',v:h32(h3),hot:true},{k:'h4',v:h32(h4),hot:true}],rows:[h0,h1,h2,h3,h4].map((v,i)=>['h'+i+' → hex chars '+(i*8+1)+'–'+(i*8+8), h32(v), true]),log:'digest = '+dg});
+  return dg;
+}
+function wGrid(w,cur,n){ const cells=[]; for(let t=0;t<Math.min(n,64);t++) cells.push({v:h32(w[t]).slice(0,6),cls:t===cur?'cur':'on'}); return {title:'message schedule W[…]',cols:8,cells}; }
+
+/* ==========================================================================
+   SHA-256 (2001)
+   ========================================================================== */
+const SHA256_K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+const SHA256_H0=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+function sha256(bytes, rec){
+  const rotr=(x,n)=>((x>>>n)|(x<<(32-n)))>>>0;
+  const {dv,total,bitlen}=padMD(bytes,false);
+  if(rec) step(rec,{phase:'pad',note:'<b>SHA‑256</b> (2001) — the workhorse of TLS, Bitcoin and package signing. Eight registers, <b>64 rounds</b> over 512‑bit blocks.',regs:[],grid:paddingGrid(bytes,bitlen,true),log:`padded to ${total} bytes`});
+  let H=SHA256_H0.slice();
+  const nb=total/64;
+  for(let bi=0;bi<nb;bi++){
+    const W=new Array(64); for(let t=0;t<16;t++) W[t]=dv.getUint32(bi*64+t*4,false);
+    for(let t=16;t<64;t++){ const s0=rotr(W[t-15],7)^rotr(W[t-15],18)^(W[t-15]>>>3); const s1=rotr(W[t-2],17)^rotr(W[t-2],19)^(W[t-2]>>>10); W[t]=(W[t-16]+s0+W[t-7]+s1)>>>0; }
+    if(rec&&bi<1) step(rec,{phase:'schedule',note:'Expand the 16 message words into 64 using two σ mixing functions — this is where every message byte starts to affect every output bit.',regs:[],grid:wGrid256(W,-1),log:'expanded W[0..63]'});
+    let [a,b,c,d,e,f,g,h]=H;
+    for(let t=0;t<64;t++){
+      const S1=rotr(e,6)^rotr(e,11)^rotr(e,25), ch=(e&f)^((~e)&g), t1=(h+S1+ch+SHA256_K[t]+W[t])>>>0;
+      const S0=rotr(a,2)^rotr(a,13)^rotr(a,22), maj=(a&b)^(a&c)^(b&c), t2=(S0+maj)>>>0;
+      h=g;g=f;f=e;e=(d+t1)>>>0;d=c;c=b;b=a;a=(t1+t2)>>>0;
+      if(rec&&bi<1) step(rec,{phase:`round ${t} of 64`,note:`The eight scratchpads a…h hold the state. This round blends in one scheduled word (W) and one fixed constant (K), computes two mixed quantities T₁ and T₂, then <b>slides every scratchpad down one place</b> — h←g, g←f, … — while the freshly‑mixed values flow into a and e. Sixty‑four of these and no one can untangle it.`,math:`T₁ = h + Σ₁(e) + Ch(e,f,g) + K<sub>t</sub> + W<sub>t</sub><br>T₂ = Σ₀(a) + Maj(a,b,c)<br>a ← T₁ + T₂,  e ← d + T₁  (all mod 2³²)`,regs:[{k:'a',v:h32(a),hot:true},{k:'b',v:h32(b)},{k:'c',v:h32(c)},{k:'d',v:h32(d)},{k:'e',v:h32(e),hot:true},{k:'f',v:h32(f)},{k:'g',v:h32(g)},{k:'h',v:h32(h)}],rows:[['K[t]',h32(SHA256_K[t])],['W[t]',h32(W[t]),true],['Σ₁ Ch',h32(S1)+' '+h32(ch)],['T₁',h32(t1),true],['Σ₀ Maj',h32(S0)+' '+h32(maj)],['T₂',h32(t2),true]],grid:wGrid256(W,t),log:`t${String(t).padStart(2,'0')} K=${h32(SHA256_K[t])} W=${h32(W[t])}  a=${h32(a)} e=${h32(e)}`}); }
+    H=[(H[0]+a)>>>0,(H[1]+b)>>>0,(H[2]+c)>>>0,(H[3]+d)>>>0,(H[4]+e)>>>0,(H[5]+f)>>>0,(H[6]+g)>>>0,(H[7]+h)>>>0];
+  }
+  const dg=H.map(h32).join('');
+  if(rec) step(rec,{phase:'the digest',note:`All 64 rounds are finished. Two things happen to turn the state into the answer.<br><br><b>1 · Fold in.</b> The eight scratchpads a…h finished this block holding the scrambled result. We add each one back onto its matching running total: H₀ += a, H₁ += b, … H₇ += h. (With more than one block, the next block would start again from these updated totals.) Adding the mixed value back onto the pre‑mixing total is the Davies–Meyer trick that makes the round function impossible to run backwards.<br><br><b>2 · Lay them end to end.</b> There is nothing else to combine — no XOR, no truncation. Each of the eight totals is simply printed as <b>8 hex characters</b> and glued together left‑to‑right. Eight × 8 = 64 hex characters = 256 bits. The table below shows exactly which total lands in which part of the answer.`,math:`digest = H₀ ∥ H₁ ∥ H₂ ∥ H₃ ∥ H₄ ∥ H₅ ∥ H₆ ∥ H₇  (each 8 hex digits, big‑endian)`,regs:H.map((v,i)=>({k:'H'+i,v:h32(v),hot:true})),rows:H.map((v,i)=>['H'+i+' → hex chars '+(i*8+1)+'–'+(i*8+8), h32(v), true]),log:'digest = '+dg});
+  return dg;
+}
+function wGrid256(W,cur){ const cells=[]; for(let t=0;t<64;t++) cells.push({v:h32(W[t]),cls:t===cur?'cur':'on'}); return {title:'message schedule W[0…63]',cols:8,cells}; }
+function sha256Bytes(bytes){ return hexToBytes(sha256(bytes)); }
+
+/* ==========================================================================
+   SHA-512 (2001) — 64-bit words (BigInt)
+   ========================================================================== */
+const K512=['428a2f98d728ae22','7137449123ef65cd','b5c0fbcfec4d3b2f','e9b5dba58189dbbc','3956c25bf348b538','59f111f1b605d019','923f82a4af194f9b','ab1c5ed5da6d8118','d807aa98a3030242','12835b0145706fbe','243185be4ee4b28c','550c7dc3d5ffb4e2','72be5d74f27b896f','80deb1fe3b1696b1','9bdc06a725c71235','c19bf174cf692694','e49b69c19ef14ad2','efbe4786384f25e3','0fc19dc68b8cd5b5','240ca1cc77ac9c65','2de92c6f592b0275','4a7484aa6ea6e483','5cb0a9dcbd41fbd4','76f988da831153b5','983e5152ee66dfab','a831c66d2db43210','b00327c898fb213f','bf597fc7beef0ee4','c6e00bf33da88fc2','d5a79147930aa725','06ca6351e003826f','142929670a0e6e70','27b70a8546d22ffc','2e1b21385c26c926','4d2c6dfc5ac42aed','53380d139d95b3df','650a73548baf63de','766a0abb3c77b2a8','81c2c92e47edaee6','92722c851482353b','a2bfe8a14cf10364','a81a664bbc423001','c24b8b70d0f89791','c76c51a30654be30','d192e819d6ef5218','d69906245565a910','f40e35855771202a','106aa07032bbd1b8','19a4c116b8d2d0c8','1e376c085141ab53','2748774cdf8eeb99','34b0bcb5e19b48a8','391c0cb3c5c95a63','4ed8aa4ae3418acb','5b9cca4f7763e373','682e6ff3d6b2b8a3','748f82ee5defb2fc','78a5636f43172f60','84c87814a1f0ab72','8cc702081a6439ec','90befffa23631e28','a4506cebde82bde9','bef9a3f7b2c67915','c67178f2e372532b','ca273eceea26619c','d186b8c721c0c207','eada7dd6cde0eb1e','f57d4f7fee6ed178','06f067aa72176fba','0a637dc5a2c898a6','113f9804bef90dae','1b710b35131c471b','28db77f523047d84','32caab7b40c72493','3c9ebe0a15c9bebc','431d67c49c100d4c','4cc5d4becb3e42b6','597f299cfc657e2a','5fcb6fab3ad6faec','6c44198c4a475817'].map(s=>BigInt('0x'+s));
+const H512=['6a09e667f3bcc908','bb67ae8584caa73b','3c6ef372fe94f82b','a54ff53a5f1d36f1','510e527fade682d1','9b05688c2b3e6c1f','1f83d9abfb41bd6b','5be0cd19137e2179'].map(s=>BigInt('0x'+s));
+function sha512(bytes, rec){
+  const rotr=(x,n)=>((x>>BigInt(n))|(x<<BigInt(64-n)))&M64;
+  const shr=(x,n)=>x>>BigInt(n);
+  // padding: 0x80, zeros to 112 mod 128, 128-bit big-endian length
+  const ml=BigInt(bytes.length)*8n, withOne=bytes.length+1, k=((112-(withOne%128))%128+128)%128, total=bytes.length+1+k+16;
+  const m=new Uint8Array(total); m.set(bytes); m[bytes.length]=0x80; const dv=new DataView(m.buffer);
+  dv.setBigUint64(total-8, ml & M64, false); dv.setBigUint64(total-16, (ml>>64n)&M64, false);
+  if(rec) step(rec,{phase:'pad',note:'<b>SHA‑512</b> (2001) — SHA‑2 on <b>64‑bit words</b>, 80 rounds, a 512‑bit state and a 128‑bit length field. Faster than SHA‑256 on 64‑bit CPUs, and its 512‑bit output stays quantum‑safe.',regs:[],log:`padded to ${total} bytes`});
+  let H=H512.slice();
+  const nb=total/128;
+  for(let bi=0;bi<nb;bi++){
+    const W=new Array(80); for(let t=0;t<16;t++) W[t]=dv.getBigUint64(bi*128+t*8,false);
+    for(let t=16;t<80;t++){ const s0=rotr(W[t-15],1)^rotr(W[t-15],8)^shr(W[t-15],7); const s1=rotr(W[t-2],19)^rotr(W[t-2],61)^shr(W[t-2],6); W[t]=(W[t-16]+s0+W[t-7]+s1)&M64; }
+    let [a,b,c,d,e,f,g,h]=H;
+    for(let t=0;t<80;t++){
+      const S1=rotr(e,14)^rotr(e,18)^rotr(e,41), ch=(e&f)^((~e&M64)&g), t1=(h+S1+ch+K512[t]+W[t])&M64;
+      const S0=rotr(a,28)^rotr(a,34)^rotr(a,39), maj=(a&b)^(a&c)^(b&c), t2=(S0+maj)&M64;
+      h=g;g=f;f=e;e=(d+t1)&M64;d=c;c=b;b=a;a=(t1+t2)&M64;
+      if(rec&&bi<1) step(rec,{phase:`round ${t} of 80`,note:`Exactly the same T₁/T₂ recipe as SHA‑256, but on 64‑bit words with wider rotations (Σ₁ = ROTR 14, 18, 41) and 80 rounds instead of 64. Every round shifts the eight registers down and mixes in one constant K and one scheduled word W; only those two values change round to round.`,math:`T₁ = h + Σ₁(e) + Ch(e,f,g) + K<sub>t</sub> + W<sub>t</sub><br>T₂ = Σ₀(a) + Maj(a,b,c);   a ← T₁+T₂,  e ← d+T₁  (mod 2⁶⁴)`,regs:[{k:'a',v:h64(a),hot:true},{k:'e',v:h64(e),hot:true},{k:'b',v:h64(b)},{k:'f',v:h64(f)}],rows:[['K[t]',h64(K512[t]).slice(0,16)],['W[t]',h64(W[t]),true],['T₁',h64(t1),true]],log:`t${String(t).padStart(2,'0')} a=${h64(a).slice(0,16)}`}); }
+    H=H.map((v,i)=>(v+[a,b,c,d,e,f,g,h][i])&M64);
+  }
+  const dg=H.map(h64).join('');
+  if(rec) step(rec,{phase:'the digest',note:`Same two‑step finish as SHA‑256, just twice as wide.<br><br><b>1 · Fold in.</b> Add the eight scratchpads a…h back onto the eight 64‑bit running totals H₀…H₇.<br><br><b>2 · Lay them end to end.</b> Print each total as <b>16 hex characters</b> and concatenate, H₀ first. Eight × 16 = 128 hex characters = 512 bits. That doubled width is what keeps SHA‑512's output comfortably out of reach even for a quantum attacker (Grover's algorithm only halves the effective strength, leaving 256 bits). The table shows each total and where it lands.`,math:`digest = H₀ ∥ H₁ ∥ … ∥ H₇  (each 16 hex digits, big‑endian)`,regs:H.map((v,i)=>({k:'H'+i,v:h64(v).slice(0,12)+'…',hot:true})),rows:H.map((v,i)=>['H'+i+' → chars '+(i*16+1)+'–'+(i*16+16), h64(v), true]),log:'digest = '+dg});
+  return dg;
+}
+
+/* ==========================================================================
+   Keccak / SHA-3 (2015) — sponge
+   ========================================================================== */
+const M64=(1n<<64n)-1n;
+const KECCAK_RC=[0x1n,0x8082n,0x800000000000808An,0x8000000080008000n,0x808Bn,0x80000001n,0x8000000080008081n,0x8000000000008009n,0x8An,0x88n,0x80008009n,0x8000000An,0x8000808Bn,0x800000000000008Bn,0x8000000000008089n,0x8000000000008003n,0x8000000000008002n,0x8000000000000080n,0x800An,0x800000008000000An,0x8000000080008081n,0x8000000000008080n,0x80000001n,0x8000000080008008n];
+const KECCAK_R=[[0,36,3,41,18],[1,44,10,45,2],[62,6,43,15,61],[28,55,25,21,56],[27,20,39,8,14]];
+function keccakF(A, rec, absorbNote){
+  const rotl=(x,n)=>{ n=BigInt(n); return ((x<<n)|(x>>(64n-n)))&M64; };
+  for(let r=0;r<24;r++){
+    const C=new Array(5), D=new Array(5);
+    for(let x=0;x<5;x++) C[x]=A[x]^A[x+5]^A[x+10]^A[x+15]^A[x+20];
+    for(let x=0;x<5;x++) D[x]=C[(x+4)%5]^rotl(C[(x+1)%5],1);
+    for(let x=0;x<5;x++) for(let y=0;y<5;y++) A[x+5*y]=(A[x+5*y]^D[x])&M64;
+    const B=new Array(25).fill(0n);
+    for(let x=0;x<5;x++) for(let y=0;y<5;y++) B[y+5*((2*x+3*y)%5)]=rotl(A[x+5*y], KECCAK_R[x][y]);
+    for(let x=0;x<5;x++) for(let y=0;y<5;y++) A[x+5*y]=(B[x+5*y]^((~B[((x+1)%5)+5*y]&M64)&B[((x+2)%5)+5*y]))&M64;
+    A[0]=(A[0]^KECCAK_RC[r])&M64;
+    if(rec) step(rec,{phase:`scramble · round ${r} of 24`,note:`One turn of the “sloshing”. Picture the 1600 bits as a 5×5×64 cube. Five moves scramble it: <b>θ</b> mixes each column with its neighbours, <b>ρ</b> spins each lane, <b>π</b> shuffles the lanes’ positions, <b>χ</b> is the only nonlinear step (each bit flips based on two neighbours), and <b>ι</b> stirs in a fixed round constant so the rounds don’t look alike. Only the round constant changes from one round to the next.`,math:`θ: mix column parities · ρ: rotate lane (x,y) by a fixed offset · π: (x,y) → (y, 2x+3y) · χ: aᵢ ← aᵢ ⊕ (¬aᵢ₊₁ · aᵢ₊₂) · ι: a₀₀ ⊕= RC`,rows:[['round constant RC','0x'+KECCAK_RC[r].toString(16)],['lane 0 after',h64(A[0])]],regs:[],grid:laneGrid(A),log:`round ${String(r).padStart(2,'0')}  lane0=${h64(A[0])}`}); }
+  return A;
+}
+function laneGrid(A){ const cells=[]; for(let y=0;y<5;y++) for(let x=0;x<5;x++) cells.push({v:h64(A[x+5*y]).slice(0,10),cls:'on'}); return {title:'5×5 lane state (25 × 64‑bit)',cols:5,cells}; }
+function keccak(rateBytes, input, outBytes, ds, rec){
+  let buf=Array.from(input); const q=rateBytes-(buf.length%rateBytes);
+  if(q===1) buf=buf.concat([ds|0x80]); else buf=buf.concat([ds]).concat(new Array(q-2).fill(0)).concat([0x80]);
+  if(rec) step(rec,{phase:'pad',note:`<b>SHA‑3 / Keccak</b> (2015) is a <b>sponge</b>: it XORs (“absorbs”) ${rateBytes}‑byte chunks of input into a 1600‑bit state, running the Keccak‑f permutation between chunks, then reads (“squeezes”) the digest out. No length‑extension weakness.`,regs:[{k:'rate',v:rateBytes+' B'},{k:'capacity',v:(200-rateBytes)+' B'}],log:`padded to ${buf.length} bytes`});
+  let S=new Array(25).fill(0n);
+  for(let off=0;off<buf.length;off+=rateBytes){
+    for(let i=0;i<rateBytes;i++){ const lane=(i>>3), sh=BigInt(8*(i&7)); S[lane]^=BigInt(buf[off+i])<<sh; S[lane]&=M64; }
+    if(rec && off<rateBytes) step(rec,{phase:'absorb',note:`XOR the first ${rateBytes}‑byte block into the state, then apply Keccak‑f (24 rounds).`,regs:[],grid:laneGrid(S),log:'absorbed block 0'});
+    S=keccakF(S, (rec&&off<rateBytes)?rec:null);
+  }
+  const out=[];
+  while(out.length<outBytes){ for(let i=0;i<rateBytes && out.length<outBytes;i++){ const lane=(i>>3), sh=BigInt(8*(i&7)); out.push(Number((S[lane]>>sh)&0xffn)); } if(out.length<outBytes) S=keccakF(S); }
+  const dg=bytesToHex(out);
+  const nLanes=Math.min(Math.ceil(outBytes/8), Math.floor(rateBytes/8));
+  const laneRows=[]; for(let l=0;l<Math.min(nLanes,4);l++){ const le=[]; for(let bidx=0;bidx<8;bidx++) le.push(hb(Number((S[l]>>BigInt(8*bidx))&0xffn))); laneRows.push(['lane '+l+' → bytes '+(l*8)+'–'+(l*8+7), le.join(' '), true]); }
+  if(nLanes>4) laneRows.push(['… and '+(nLanes-4)+' more lanes', 'bytes 32–'+(outBytes-1), false]);
+  if(rec) step(rec,{phase:'the digest',note:`After absorbing the whole message and 24 rounds of scrambling, there's no summing or concatenating to do — you just <b>read the answer straight off the top of the pool</b>. The sponge has already stirred every input bit throughout the state, so the first ${outBytes} bytes simply <b>are</b> the digest.<br><br>Reading them is the mirror image of absorbing: walk the lanes in order (lane 0, lane 1, …), and within each 64‑bit lane peel off its <b>8 bytes lowest‑first</b>. Lane 0 gives digest bytes 0–7, lane 1 gives bytes 8–15, and so on until you have ${outBytes} bytes. The table shows the first few lanes and the exact bytes they hand over. (If you wanted a longer output than one lane‑row can supply, you'd run Keccak‑f again and keep reading — that's the “squeeze”.)`,math:`digest = first ${outBytes} bytes of the final 1600‑bit state, read lane‑by‑lane (each lane low‑byte‑first)`,regs:[],rows:laneRows,grid:laneGrid(S),log:'digest = '+dg});
+  return dg;
+}
+const sha3_256 = (b,rec) => keccak(136, b, 32, 0x06, rec);
+const sha3_512 = (b,rec) => keccak(72,  b, 64, 0x06, rec);
+
+/* Web Crypto ground truth */
+async function subtle(alg, bytes){ try{ const h=await crypto.subtle.digest(alg, bytes); return bytesToHex(new Uint8Array(h)); }catch(e){ return null; } }
+
+/* ==========================================================================
+   Registry
+   ========================================================================== */
+const AUTO_DIGEST_LIMIT=2*1024*1024, TRACE_LIMIT=64*1024, STEP_CAP=120;
+const ALGOS=[
+  {id:'checksum8',name:'Checksum‑8',year:'1950s',bits:8,family:'Additive checksum',status:'checksum',badge:'checksum',fn:checksum8,
+   expl:'The very first idea of a “digest”: add up all the bytes. Catches a stray bit; nothing more.',pq:'not cryptographic',
+   intro:'Think of adding up the page numbers of a book into one running total — but every time the total goes past 255, it wraps back around to 0. That single wrapped‑around number is the “digest”. If even one page changes, the total usually won’t match. It’s the oldest error‑check there is: great for catching an accidental typo on a noisy phone line, useless against anyone who <b>wants</b> to fool it, since it’s easy to cook up a different message with the same total.'},
+  {id:'bsd',name:'BSD sum',year:'1970s',bits:16,family:'Rotate‑add checksum',status:'checksum',badge:'checksum',fn:bsdsum,
+   expl:'The original Unix <code>sum</code>: rotate then add, so byte order matters.',pq:'not cryptographic',
+   intro:'Same spirit as the simple checksum, but before adding each byte we give the running total a little <b>spin</b> (we shuffle its bits sideways by one). That spin means the <b>order</b> of the data now matters — swap two letters and the answer changes, which a plain sum would happily ignore. This was the checksum built into early Unix.'},
+  {id:'fletcher16',name:'Fletcher‑16',year:'1979',bits:16,family:'Position checksum',status:'checksum',badge:'checksum',fn:fletcher16,
+   expl:'Two coupled sums detect transpositions a plain checksum misses. Cheap and popular in protocols.',pq:'not cryptographic',
+   intro:'Keep <b>two</b> running totals at once. The first (s1) adds each byte. The second (s2) adds the first total at every step — so early bytes get counted many times and late bytes only once. That makes the result sensitive to the <b>position</b> of your data, catching shuffles and swaps that a single sum can’t see.'},
+  {id:'adler32',name:'Adler‑32',year:'1995',bits:32,family:'Position checksum',status:'checksum',badge:'checksum',fn:adler32,
+   expl:'Fletcher reduced mod a prime; the checksum inside zlib/gzip.',pq:'not cryptographic',
+   intro:'Fletcher’s two‑sum idea, scaled up and wrapped around the prime number 65521 (a prime mixes the results a little more evenly). It’s fast and it’s the integrity check quietly riding inside every ZIP, gzip and PNG file you’ve ever opened — but it’s still only a checksum, not a security tool.'},
+  {id:'pearson',name:'Pearson',year:'1990',bits:8,family:'Table hash',status:'legacy',badge:'legacy',fn:pearson,
+   expl:'A single byte walks a fixed permutation table — the essence of table‑based hashing in 8 bits.',pq:'too small to matter',
+   intro:'Start holding the number 0. For each letter, combine your current number with the letter and use the result to <b>look up</b> the next number in a fixed, shuffled table of 0–255. It’s like a treasure hunt where every clue tells you which page to flip to next. Tiny and surprisingly well‑mixed — but with only 256 possible outputs, far too small to be secure.'},
+  {id:'crc32',name:'CRC‑32',year:'1975',bits:32,family:'Polynomial CRC',status:'checksum',badge:'checksum',fn:crc32,
+   expl:'Polynomial division over GF(2); superb at burst errors, trivial to forge on purpose.',pq:'not cryptographic',
+   intro:'Treat the entire message as one enormous number and <b>divide</b> it by a fixed “magic” number, keeping only the remainder. It’s the same trick as “casting out nines” you may have met in school, but done in binary. Brilliant at spotting accidental glitches on a wire or disk — and completely defenceless against someone deliberately trying to forge it. <span style="color:var(--info)">For mathematicians:</span> the division happens in GF(2)[x], polynomials with coefficients mod 2.'},
+  {id:'md2',name:'MD2',year:'1989',bits:128,family:'Merkle–Damgård',status:'broken',badge:'broken',fn:md2,
+   expl:'Rivest’s first Message Digest, built for 8‑bit machines: a π substitution box, a checksum block, 18 mixing rounds.',pq:'broken classically',
+   intro:'The <b>first</b> of Ron Rivest’s famous “Message Digest” family (1989), designed for slow 8‑bit computers. It chops your message into 16‑byte chunks, runs every byte through a fixed shuffle table (borrowed from the digits of π), tacks on a checksum of its own, then stirs the whole 48‑byte pot 18 times. Ingenious for its day; thoroughly broken now.'},
+  {id:'md4',name:'MD4',year:'1990',bits:128,family:'Merkle–Damgård',status:'broken',badge:'broken',fn:md4,
+   expl:'Fast and hugely influential — the template for MD5, SHA‑0/1. Collisions found in 1995.',pq:'broken classically',
+   intro:'Rivest’s speed‑obsessed 1990 design — and the <b>blueprint</b> that MD5, SHA‑0 and SHA‑1 all copied. Four little 32‑bit scratchpads get mixed 48 times using simple AND/OR/XOR recipes. Its DNA is in almost every hash invented since; it’s also completely broken (collisions since 1995), which makes it a perfect teaching specimen.'},
+  {id:'md5',name:'MD5',year:'1992',bits:128,family:'Merkle–Damgård',status:'broken',badge:'broken',fn:md5,verify:true,
+   expl:'Four registers, 64 operations. Once everywhere; practical collisions since 2004.',pq:'broken classically',
+   intro:'The famous one. Four 32‑bit scratchpads, stirred <b>64 times</b> per 512‑bit chunk, with a different nonlinear recipe each quarter. For decades it was everywhere — download checksums, passwords, certificates — until people learned to build two <b>different</b> files with the <b>same</b> MD5. Still fine as a casual “did this file change?” check; unsafe anywhere an attacker is involved.'},
+  {id:'sha1',name:'SHA‑1',year:'1995',bits:160,family:'Merkle–Damgård',status:'broken',badge:'broken',fn:sha1,subtleAlg:'SHA-1',verify:true,
+   expl:'80 rounds, five registers. Collision demonstrated in 2017 (SHATTERED).',pq:'broken classically',
+   intro:'MD5’s bigger, tougher cousin, designed by the NSA: a fifth scratchpad and <b>80</b> rounds. It guarded the web for twenty years — until 2017, when researchers actually produced two different PDF files sharing one SHA‑1 fingerprint (the “SHATTERED” attack). Now retired from anything security‑critical.'},
+  {id:'sha256',name:'SHA‑256',year:'2001',bits:256,family:'SHA‑2',status:'secure',badge:'secure',fn:sha256,subtleAlg:'SHA-256',verify:true,
+   expl:'The modern default — TLS, Bitcoin, Git. 64 rounds over 512‑bit blocks.',pq:'~128‑bit vs Grover',
+   intro:'Today’s workhorse: it secures web traffic (the padlock in your browser), signs software updates, and anchors Bitcoin. <b>Eight</b> 32‑bit scratchpads, a clever “schedule” that lets every input bit ripple into every output bit, and <b>64</b> rounds of mixing. Nobody knows a practical way to reverse it or to find two inputs that collide.'},
+  {id:'sha512',name:'SHA‑512',year:'2001',bits:512,family:'SHA‑2',status:'secure',badge:'pq',fn:sha512,subtleAlg:'SHA-512',verify:true,
+   expl:'SHA‑2 on 64‑bit words, 80 rounds, 512‑bit state.',pq:'~256‑bit vs Grover — PQ‑ready',
+   intro:'SHA‑256’s big sibling: it works in 64‑bit gulps instead of 32‑bit, runs 80 rounds, and produces a 512‑bit answer. On modern 64‑bit computers it’s actually <b>faster</b> than SHA‑256, and its extra‑long output keeps it safe even against future <b>quantum</b> computers.'},
+  {id:'sha3_256',name:'SHA3‑256',year:'2015',bits:256,family:'Keccak (sponge)',status:'secure',badge:'secure',fn:sha3_256,
+   expl:'A sponge, not a Merkle–Damgård chain — immune to length‑extension.',pq:'~128‑bit vs Grover',
+   intro:'A completely fresh design, chosen through a public worldwide competition (2015). Instead of chaining blocks, it behaves like a <b>sponge</b>: it soaks your message into a big pool of 1600 bits, sloshes the pool with a fixed scrambling permutation, then wrings the answer back out. Because it doesn’t chain the old way, it sidesteps a subtle weakness (“length extension”) that the SHA‑2 family has.'},
+  {id:'sha3_512',name:'SHA3‑512',year:'2015',bits:512,family:'Keccak (sponge)',status:'secure',badge:'pq',fn:sha3_512,
+   expl:'The widest SHA‑3: smaller rate, larger capacity, bigger security margin.',pq:'~256‑bit vs Grover — PQ‑ready',
+   intro:'The widest member of SHA‑3. It soaks up the message in smaller mouthfuls but keeps a bigger hidden reserve of bits, which buys a larger safety margin and a 512‑bit output — comfortably quantum‑resistant. Same sponge machinery as SHA3‑256, just tuned for maximum strength.'},
+  {id:'lamport',name:'Lamport OTS',year:'1979',bits:256,family:'Hash‑based signature',status:'secure',badge:'pq',fn:lamportTrace,signature:true,
+   expl:'A one‑time <b>signature</b> built from SHA‑256 alone — no number theory, so it survives quantum computers. Watch keygen → sign → verify → tamper on the current input.',pq:'post‑quantum — security rests only on SHA‑256',
+   intro:'Not a digest but a <b>signature</b> scheme — included because it shows what hashing alone can do in the post‑quantum world. The threat: a big quantum computer running <b>Shor\'s algorithm</b> would instantly break RSA and elliptic‑curve signatures, which lean on hard number theory. A hash has no such structure to exploit — the best a quantum attacker manages is <b>Grover\'s algorithm</b>, which only takes a square‑root‑sized bite out of its strength (why SHA‑512 and SHA3‑512 stay safe). Lamport turns that toughness into a signature: your key is 256 pairs of random secrets, you publish their SHA‑256 hashes, and to sign a message you reveal exactly one secret per bit of its digest. Anyone can re‑hash the revealed secrets to check them, yet nobody can forge a different message without a secret you never handed out. The catch is in the name — each key signs <b>once</b>. (Real systems like XMSS and NIST\'s SPHINCS+ stack many Lamport‑style keys into a tree to sign safely many times.)'},
+];
+
+/* ==========================================================================
+   Input + digests
+   ========================================================================== */
+let currentBytes=new TextEncoder().encode('abc'), currentLabel='text (3 bytes)', recomputeTimer=null;
+function setInputBytes(bytes,label){ currentBytes=bytes; currentLabel=label; renderInMeta(); clearTimeout(recomputeTimer); recomputeTimer=setTimeout(recomputeAll,120); }
+function renderInMeta(){ $('#inMeta').innerHTML=`<b>${currentBytes.length.toLocaleString()}</b> bytes · <b>${(currentBytes.length*8).toLocaleString()}</b> bits`; }
+
+function buildCards(){
+  $('#dgGrid').innerHTML=ALGOS.map(a=>`
+    <div class="dg">
+      <div class="dg-h"><span class="dg-name">${a.name}</span><span class="dg-yr">${a.year}</span>
+        <span class="badge ${a.badge}">${a.badge==='pq'?'PQ‑ready':a.status}</span></div>
+      <div class="dg-val pending" id="v-${a.id}">…</div>
+      <div class="dg-foot"><span class="verify" id="ver-${a.id}"></span>
+        <span style="display:flex;gap:6px;"><button class="btn mini steps" data-steps="${a.id}">▶ Steps</button>${a.signature?'':`<button class="btn mini" data-copy="${a.id}">Copy</button>`}</span></div>
+      <div class="dg-expl">${a.expl}</div>
+      <div class="dg-pq">⚛ ${a.pq}</div>
+    </div>`).join('');
+  $$('[data-copy]').forEach(b=>b.addEventListener('click',()=>{ const el=$('#v-'+b.dataset.copy); if(el.textContent&&!el.classList.contains('pending')){ navigator.clipboard?.writeText(el.textContent); toast('Copied '+b.dataset.copy); }}));
+  $$('[data-steps]').forEach(b=>b.addEventListener('click',()=>openSteps(b.dataset.steps)));
+}
+async function computeCard(a){
+  const el=$('#v-'+a.id), ver=$('#ver-'+a.id); ver.textContent='';
+  if(a.signature){ el.classList.remove('pending'); el.innerHTML='<span class="sig-note">Hash‑based one‑time signature — press <b>▶ Steps</b> to watch keygen → sign → verify → tamper on the current input.</span>'; return; }
+  el.textContent='computing…'; el.classList.add('pending');
+  await new Promise(r=>setTimeout(r,0));               // let the UI paint "computing…"
+  let val = a.fn ? a.fn(currentBytes,null) : null;
+  if(a.subtleAlg){ const sv=await subtle(a.subtleAlg,currentBytes);
+    if(sv){ if(a.verify && val){ const ok=val===sv; ver.textContent=ok?'✓ matches Web Crypto':'✗ mismatch'; ver.className='verify'+(ok?'':' bad'); } val=sv; } }
+  el.textContent=val||'—'; el.classList.remove('pending');
+}
+window.__computeOne=id=>{ const a=ALGOS.find(x=>x.id===id); if(a) computeCard(a); };
+async function recomputeAll(){
+  const big = currentBytes.length > AUTO_DIGEST_LIMIT;
+  for(const a of ALGOS){
+    const el=$('#v-'+a.id), ver=$('#ver-'+a.id); ver.textContent='';
+    if(a.signature){ await computeCard(a); continue; }   // signatures don't produce a digest
+    if(big){
+      el.classList.add('pending');
+      el.innerHTML=`<span class="big-note">Large input (${fmtSize(currentBytes.length)}) — not hashed automatically to keep things responsive.</span>`+
+                   `<button class="btn mini primary" onclick="window.__computeOne('${a.id}')">Compute ${esc(a.name)} now</button>`;
+      continue;
+    }
+    await computeCard(a);
+  }
+}
+
+/* ==========================================================================
+   Generic step player
+   ========================================================================== */
+function createPlayer(p){
+  // p: {ids for play,step,back,reset,speed,prog,note,rd,regs,data,dataH,detailH,log}
+  let steps=[], i=0, playing=false, timer=null;
+  const el=id=>document.getElementById(id);
+  function load(tr){ steps=tr.steps; i=0; stop(); tr.note && (currentNote=tr.note); paint(); }
+  function paint(){
+    if(!steps.length){ return; }
+    const s=steps[Math.max(0,Math.min(i,steps.length-1))];
+    if(p.detailH) el(p.detailH).textContent=s.phase||'Operation';
+    el(p.note).innerHTML=s.note||'';
+    if(p.math){ const me=el(p.math); if(s.math){ me.style.display=''; me.innerHTML=`<span class="lbl">In math terms</span>${s.math}`; } else me.style.display='none'; }
+    el(p.rd).innerHTML=(s.rows||[]).map(r=>`<span class="k">${esc(r[0])}</span><span class="v${r[2]?' hi':''}">${esc(r[1])}</span>`).join('');
+    el(p.regs).innerHTML=(s.regs||[]).map(r=>`<div class="rcell${r.hot?' hot':''}"><div class="k">${esc(r.k)}</div><div class="v">${esc(r.v)}</div></div>`).join('');
+    if(s.grid){ el(p.dataH).textContent=s.grid.title||'Data'; el(p.data).innerHTML=`<div class="grid-cells" style="grid-template-columns:repeat(${s.grid.cols},1fr)">`+s.grid.cells.map(c=>`<span class="gcell ${c.cls||''}">${esc(c.v)}</span>`).join('')+`</div>`; el(p.data).parentElement.style.display=''; }
+    else { el(p.data).innerHTML=''; }
+    // op log up to i
+    let log=''; for(let j=0;j<=i && j<steps.length;j++){ if(steps[j].log) log+=(log?'\n':'')+steps[j].log; }
+    const lg=el(p.log); lg.textContent=log; lg.scrollTop=lg.scrollHeight;
+    el(p.prog).textContent=`step ${i+1} / ${steps.length}  ·  ${s.phase||''}`;
+  }
+  function fwd(){ if(i<steps.length-1){ i++; paint(); } else stop(); }
+  function back(){ if(i>0){ i--; paint(); } }
+  function stop(){ playing=false; clearInterval(timer); timer=null; el(p.play).textContent='▶ Play'; }
+  function play(){ if(!steps.length) return; if(playing){ stop(); return; } playing=true; el(p.play).textContent='⏸ Pause';
+    timer=setInterval(()=>{ if(i>=steps.length-1){ stop(); return; } fwd(); }, Math.max(16,1000/(+el(p.speed).value))); }
+  el(p.play).addEventListener('click',play);
+  el(p.step).addEventListener('click',()=>{ stop(); fwd(); });
+  el(p.back).addEventListener('click',()=>{ stop(); back(); });
+  el(p.reset).addEventListener('click',()=>{ stop(); i=0; paint(); });
+  el(p.speed).addEventListener('input',()=>{ if(playing){ stop(); play(); } });
+  return { load, paint:()=>paint(), reset:()=>{ i=0; stop(); paint(); }, stop:()=>stop() };
+}
+
+/* ---- Steps modal ---- */
+const modalPlayer=createPlayer({play:'mPlay',step:'mStep',back:'mBack',reset:'mReset',speed:'mSpeed',prog:'mProg',note:'mNote',math:'mMath',rd:'mRd',regs:'mRegs',data:'mData',dataH:'mDataH',detailH:'mDetailH',log:'mLog'});
+function openSteps(id){
+  const a=ALGOS.find(x=>x.id===id); if(!a) return;
+  $('#mTitle').innerHTML=`${a.name}<span class="yr">${a.year}</span>`;
+  $('#mSub').textContent=a.signature?`${a.family} · post‑quantum`:`${a.bits}‑bit digest · ${a.family}`;
+  $('#mIntro').innerHTML=a.intro||a.expl;
+  $('#mInput').textContent=currentLabel;
+  let bytes=currentBytes, trimmed=false;
+  if(bytes.length>TRACE_LIMIT){ bytes=bytes.slice(0,TRACE_LIMIT); trimmed=true; }
+  const rec=mkRec(STEP_CAP);
+  a.fn(bytes, rec);
+  if(trimmed) rec.steps.unshift({phase:'a quick note',note:`Your input is large, so this walkthrough follows just the first <b>${TRACE_LIMIT.toLocaleString()} bytes</b> to stay snappy. The full digest is on the card once you compute it.`,regs:[],log:'(input trimmed for the walkthrough)'});
+  if(rec.trunc) rec.steps.push({phase:'…and so on',note:`We stopped after <b>${STEP_CAP}</b> steps so the transcript stays readable — the remaining rounds repeat the exact same moves. The final digest on the card is complete and exact.`,regs:[],log:'… (further steps omitted)'});
+  modalTrace={ algo:a, steps:rec.steps, input:currentLabel, trimmed };
+  modalPlayer.load({steps:rec.steps});
+  $('#stepsModal').classList.add('open');
+}
+let modalTrace=null;
+function closeSteps(){ modalPlayer.stop(); $('#stepsModal').classList.remove('open'); }
+$('#mClose').addEventListener('click',closeSteps);
+$('#stepsModal').addEventListener('click',e=>{ if(e.target.id==='stepsModal') closeSteps(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && $('#stepsModal').classList.contains('open')) closeSteps(); });
+
+/* ==========================================================================
+   Post-quantum: Lamport one-time signature (stepped)
+   ========================================================================== */
+function randBytes(n){ const b=new Uint8Array(n); crypto.getRandomValues(b); return b; }
+function bitOf(h,i){ return (h[i>>3]>>(7-(i&7)))&1; }
+// One linear walkthrough: keygen → sign → verify (valid) → tamper (detected).
+// Same shape as every other algo, so it plays in the shared Steps modal.
+function lamportTrace(bytes, rec){
+  const sk=[], pk=[];
+  step(rec,{phase:'keygen',note:'A <b>Lamport</b> one‑time signature is built from nothing but SHA‑256 — no number theory, so a quantum computer (which would break RSA and elliptic curves) gains no foothold. The private key is <b>256 pairs</b> of random 256‑bit secrets: two per bit of a SHA‑256 digest. The public key is every secret hashed once.',regs:[{k:'pairs',v:'256'},{k:'secret',v:'32 B'}],log:'keygen: 256 secret pairs'});
+  for(let i=0;i<256;i++){ const s0=randBytes(32),s1=randBytes(32); sk.push([s0,s1]); pk.push([sha256Bytes(s0),sha256Bytes(s1)]);
+    if(i<5||i===255) step(rec,{phase:`keygen · bit ${i}`,note:`For message‑bit ${i} we keep two secrets. Their public halves are pk[${i}][0] = SHA‑256(sk[${i}][0]) and pk[${i}][1] = SHA‑256(sk[${i}][1]). Publishing only the hashes gives nothing away, because SHA‑256 can't be run backwards.`,regs:[{k:'bit',v:i},{k:'pk·0',v:bytesToHex(pk[i][0]).slice(0,16)+'…',hot:true},{k:'pk·1',v:bytesToHex(pk[i][1]).slice(0,16)+'…',hot:true}],log:`bit ${i}: pk0=${bytesToHex(pk[i][0]).slice(0,12)}… pk1=${bytesToHex(pk[i][1]).slice(0,12)}…`}); }
+  step(rec,{phase:'keygen done',note:'All 256 public‑key pairs are ready. Private key = 16 KB, public key = 16 KB — bulky, but every piece is just a hash.',regs:[{k:'private',v:'16 KB'},{k:'public',v:'16 KB'}],log:'keypair ready'});
+  const mh=sha256Bytes(bytes);
+  step(rec,{phase:'sign',note:'To sign, first shrink the whole message to a 256‑bit fingerprint with SHA‑256. Then walk its 256 bits: for each bit <b>reveal one secret</b> — column 0 if the bit is 0, column 1 if it is 1. The other 256 secrets stay hidden forever.',regs:[{k:'msg‑hash',v:bytesToHex(mh).slice(0,20)+'…'}],grid:{title:'message digest — the 256 bits being signed',cols:32,cells:[...Array(256)].map((_,i)=>({v:bitOf(mh,i)+'',cls:bitOf(mh,i)?'one':'on'}))},log:'sign: mh='+bytesToHex(mh).slice(0,16)+'…'});
+  const sig=[];
+  for(let i=0;i<256;i++){ const bit=bitOf(mh,i); sig.push(sk[i][bit]);
+    if(i<5) step(rec,{phase:`sign · bit ${i}`,note:`Message bit ${i} is <b>${bit}</b>, so we hand out secret sk[${i}][${bit}] and never touch sk[${i}][${1-bit}] again.`,regs:[{k:'bit',v:i},{k:'value',v:bit},{k:'reveal',v:bytesToHex(sig[i]).slice(0,16)+'…',hot:true}],log:`bit ${i}=${bit}  reveal sk[${i}][${bit}]`}); }
+  step(rec,{phase:'sign done',note:'The signature is those 256 revealed secrets — 8 KB in all. The one iron rule: this key may sign <b>a single message, ever</b>. Sign twice and you\'d expose both secrets for some bit, letting anyone forge.',regs:[{k:'signature',v:'256 × 32 B = 8 KB'}],log:'signature ready (8 KB)'});
+  step(rec,{phase:'verify',note:'Anyone holding the public key can check the signature: for every bit, hash the revealed secret and confirm it equals the matching public‑key half. All 256 must line up.',regs:[{k:'msg‑hash',v:bytesToHex(mh).slice(0,20)+'…'}],log:'verify start'});
+  for(let i=0;i<256;i++){ const bit=bitOf(mh,i); const got=sha256Bytes(sig[i]); const exp=pk[i][bit]; const match=bytesToHex(got)===bytesToHex(exp);
+    if(i<5) step(rec,{phase:`verify · bit ${i}`,note:`Bit ${i} = ${bit}: SHA‑256(revealed secret) ${match?'equals':'≠'} the published pk[${i}][${bit}] → ${match?'OK':'MISMATCH'}.`,regs:[{k:'bit',v:i},{k:'hash',v:bytesToHex(got).slice(0,16)+'…',hot:!match},{k:'expect',v:bytesToHex(exp).slice(0,16)+'…'},{k:'',v:match?'✓':'✗'}],log:`bit ${i}: ${match?'ok':'MISMATCH'}`}); }
+  step(rec,{phase:'valid',note:'Every revealed secret hashed to its public‑key half — <b>signature valid</b>. The only thing we ever trusted was SHA‑256, which is exactly why the whole scheme is quantum‑resistant.',regs:[{k:'result',v:'VALID',hot:true}],log:'RESULT: valid'});
+  const mh2=mh.slice(); mh2[0]^=0x01;
+  step(rec,{phase:'tamper',note:'Now change the message by a single bit and try to verify the <b>same</b> signature. The altered message hashes differently, so at least one bit will demand a secret the signer never revealed.',regs:[{k:'flipped',v:'1 message bit',hot:true}],log:'tamper: flip one hash bit'});
+  let failAt=-1;
+  for(let i=0;i<256;i++){ const bit=bitOf(mh2,i); const got=sha256Bytes(sig[i]); const exp=pk[i][bit]; const match=bytesToHex(got)===bytesToHex(exp);
+    if(!match&&failAt<0) failAt=i;
+    if(i<5||(!match&&i<40)) step(rec,{phase:`re‑check · bit ${i}`,note:`Bit ${i} = ${bit}: SHA‑256(revealed) ${match?'still matches':'does NOT match'} pk[${i}][${bit}]${match?'':' — the signature only carries the secret for the <b>other</b> value of this bit, which the signer never released'}.`,regs:[{k:'bit',v:i},{k:'hash',v:bytesToHex(got).slice(0,16)+'…',hot:!match},{k:'expect',v:bytesToHex(exp).slice(0,16)+'…'},{k:'',v:match?'✓':'✗'}],log:`bit ${i}: ${match?'ok':'MISMATCH'}`}); }
+  step(rec,{phase:'tamper detected',note:`A revealed secret hashed to the wrong value (first at bit ${failAt}) — <b>verification fails</b>, exactly as it must for a modified message. That is the whole guarantee: you cannot move a signature onto a different message without knowing a secret you were never given.`,regs:[{k:'result',v:'INVALID',hot:true},{k:'first mismatch',v:'bit '+failAt}],log:`RESULT: invalid (bit ${failAt})`});
+  return 'one‑time signature';
+}
+
+/* ==========================================================================
+   Branded print
+   ========================================================================== */
+let LOGO_URI='';
+(function(){ try{ fetch('logo.webp').then(r=>r.ok?r.blob():null).then(b=>{ if(!b)return; const fr=new FileReader(); fr.onload=()=>LOGO_URI=fr.result; fr.readAsDataURL(b); }).catch(()=>{}); }catch(e){} })();
+// Print the FULL step-by-step of the algorithm currently open in the modal.
+function printSteps(){
+  if(!modalTrace){ toast('Open a card’s Steps walkthrough first'); return; }
+  const a=modalTrace.algo, steps=modalTrace.steps;
+  const now=new Date(); const p2=n=>String(n).padStart(2,'0'); const stamp=now.getFullYear()+'-'+p2(now.getMonth()+1)+'-'+p2(now.getDate())+' '+p2(now.getHours())+':'+p2(now.getMinutes());
+  const cardVal=($('#v-'+a.id).textContent||'').trim();
+  const digest=a.signature?'Hash‑based one‑time signature — keygen → sign → verify → tamper':(/^[0-9a-f]+$/i.test(cardVal)?cardVal:'(not computed — large input; use “Compute” on the card)');
+  const logo=LOGO_URI?`<img class="logo" src="${LOGO_URI}" alt="Carino">`:'';
+
+  // When a run of steps repeats the same explanation (e.g. 64 identical SHA‑256
+  // rounds), print the prose + formula ONCE as a group header, then only the
+  // changing numbers for each subsequent step. Keeps the PDF readable.
+  let prevNote='', prevMath='';
+  const stepHtml=steps.map((s,i)=>{
+    const isDigest = (s.phase||'')==='the digest';
+    const showNote = s.note && s.note!==prevNote;
+    const showMath = s.math && s.math!==prevMath;
+    const repeat = !showNote && !showMath;   // pure "changing numbers" row
+    prevNote=s.note||prevNote; prevMath=s.math||prevMath;
+    // The final "the digest" step's rows/registers spell out how each part of
+    // the state maps to the output — render those as an actual two-column
+    // assembly table instead of one wrapped line.
+    let body;
+    if(isDigest){
+      const tbl = (s.rows&&s.rows.length) ? s.rows.map(r=>[r[0],r[1]]) : (s.regs||[]).map(r=>[r.k,r.v]);
+      body = tbl.length ? `<table class="assembly"><tbody>${tbl.map(r=>`<tr><td class="k">${r[0]}</td><td class="v">${r[1]}</td></tr>`).join('')}</tbody></table>` : '';
+    } else {
+      const vals=[...(s.rows||[]).map(r=>`${r[0]} = ${r[1]}`), ...(s.regs||[]).map(r=>`${r.k} = ${r.v}`)].filter(x=>x.trim()!=='=').join('  ·  ');
+      body = vals?`<div class="vals">${vals}</div>`:'';
+    }
+    return `<div class="step${repeat?' repeat':''}">
+      <div class="sh"><span class="num">${i+1}</span><span class="phase">${esc(s.phase||'')}</span></div>
+      ${showNote?`<div class="note">${s.note}</div>`:''}
+      ${showMath?`<div class="math"><span class="lbl">In math terms</span>${s.math}</div>`:''}
+      ${body}
+    </div>`;
+  }).join('');
+
+  const doc=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(a.name)} — steps</title><style>
+    :root{--primary:#b45309;--ink:#1f2937;--muted:#6b7280;--border:#e5e7eb;--blue:#0369a1;} html{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    *{box-sizing:border-box;} body{font:12px/1.55 'IBM Plex Sans',Arial,sans-serif;color:var(--ink);margin:24px;}
+    sub,sup{font-size:0.8em;}
+    .ph{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--primary);padding-bottom:16px;margin-bottom:16px;}
+    .ph h1{font-family:'Red Hat Display',sans-serif;font-weight:900;font-size:20px;margin:0;color:var(--primary);}
+    .ph .sub{font-family:ui-monospace,monospace;font-size:11px;color:var(--muted);margin:5px 0 0;}
+    .logo{height:48px;} .brand{font-family:ui-monospace,monospace;font-size:10px;color:var(--muted);margin-top:6px;text-align:right;}
+    .intro{font-size:12.5px;line-height:1.65;color:#374151;background:var(--accent-faint,#fdf6e3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;}
+    .intro b{color:#111;}
+    .dg{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;word-break:break-all;background:#faf7ef;border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:8px 0 18px;}
+    .dg b{color:var(--primary);}
+    h2{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--primary);border-bottom:1px solid var(--border);padding-bottom:5px;margin:0 0 12px;}
+    .step{break-inside:avoid;padding:8px 0 10px;border-bottom:1px solid #f0f0f0;}
+    .step.repeat{padding:2px 0 2px 30px;border-bottom:none;}
+    .step.repeat .sh{margin-bottom:0;} .step.repeat .sh .phase{font-weight:400;color:#6b7280;}
+    .step.repeat .vals{margin-top:2px;}
+    .sh{display:flex;align-items:baseline;gap:9px;margin-bottom:3px;}
+    .sh .num{font-family:ui-monospace,monospace;font-weight:700;color:#fff;background:var(--primary);border-radius:5px;padding:1px 7px;font-size:10px;}
+    .sh .phase{font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.04em;}
+    .note{color:#333;margin:2px 0 0;} .note b{color:#111;} .note code{font-family:ui-monospace,monospace;background:#eee;padding:0 3px;border-radius:3px;}
+    .math{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;color:var(--blue);background:#eff6fb;border-left:3px solid #7cc0e6;padding:6px 9px;border-radius:0 5px 5px 0;margin:7px 0 0;line-height:1.5;}
+    .math .lbl{display:block;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-size:8.5px;margin-bottom:3px;}
+    .vals{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:9.5px;color:#555;margin:6px 0 0;word-break:break-all;}
+    table.assembly{border-collapse:collapse;margin:8px 0 2px;font-size:10px;width:100%;max-width:540px;break-inside:avoid;}
+    table.assembly td{border:1px solid var(--border);padding:3px 9px;vertical-align:top;}
+    table.assembly td.k{color:#4b5563;white-space:nowrap;width:1%;}
+    table.assembly td.v{font-family:ui-monospace,Menlo,Consolas,monospace;color:#111;font-weight:600;letter-spacing:.02em;word-break:break-all;}
+    table.assembly tr:nth-child(even){background:#faf7ef;}
+    footer{margin-top:20px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:#9aa0a8;}
+    @media print{body{margin:0;}@page{margin:14mm;}}
+  </style></head><body>
+    <header class="ph"><div><h1>${esc(a.name)} — how it works, step by step</h1><div class="sub">${a.year} · ${a.bits}‑bit · ${esc(a.family)} · input: ${esc(modalTrace.input)} · generated ${stamp}</div></div><div style="text-align:right">${logo}<div class="brand">Carino Hash</div></div></header>
+    <div class="intro">${a.intro||a.expl}</div>
+    <div class="dg">${a.signature?'Scheme':'Digest of this input'}: <b>${esc(digest)}</b></div>
+    <h2>The ${steps.length} steps</h2>
+    ${stepHtml}
+    <footer>Generated locally by Carino Hash — an educational walkthrough. Nothing left this device.${modalTrace.trimmed?' Large input: steps cover the first '+TRACE_LIMIT.toLocaleString()+' bytes.':''}</footer>
+  </body></html>`;
+
+  const ifr=document.createElement('iframe'); ifr.setAttribute('aria-hidden','true'); ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;'; document.body.appendChild(ifr);
+  const w=ifr.contentWindow,d=w.document; d.open(); d.write(doc); d.close();
+  const cleanup=()=>setTimeout(()=>{try{ifr.remove();}catch(e){}},500); w.onafterprint=cleanup;
+  const go=()=>{try{w.focus();w.print();}catch(e){cleanup();}}; const img=d.querySelector('img'); if(img&&!img.complete){img.onload=go;img.onerror=go;} else setTimeout(go,60);
+}
+$('#mPrint').addEventListener('click',printSteps);
+
+/* ==========================================================================
+   Wiring
+   ========================================================================== */
+$$('#inSeg button').forEach(b=>b.addEventListener('click',()=>{
+  $$('#inSeg button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  const isText=b.dataset.in==='text'; $('#txt').style.display=isText?'':'none'; $('#fileBtn').classList.toggle('active',!isText);
+  if(isText) textChanged();
+}));
+function textChanged(){ const e=new TextEncoder().encode($('#txt').value); setInputBytes(e,`text (${e.length} bytes)`); }
+$('#txt').addEventListener('input',textChanged);
+$('#fileBtn').addEventListener('click',()=>$('#fileInput').click());
+$('#fileInput').addEventListener('change',e=>{ if(e.target.files.length) loadFile(e.target.files[0]); });
+async function loadFile(file){ try{ const buf=await file.arrayBuffer(); setInputBytes(new Uint8Array(buf),`${file.name} (${fmtSize(file.size)})`); $('#fileBtn').textContent='📄 '+file.name; }catch(e){ toast('Could not read file'); } }
+
+/* boot */
+buildCards(); renderInMeta();
+recomputeAll();
+</script>
+<script src="carino-navbar.js" data-app="Hash" defer></script>
+</body>
+</html>
