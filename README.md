@@ -60,3 +60,7 @@ are progressive-enhancement only).
   full result.
 - Educational only — not a security product. The Lamport demo is a teaching
   illustration of hash-based signatures, not a hardened implementation.
+
+## License
+
+Licensed under the **GNU Affero General Public License v3.0 or later** (AGPL-3.0-or-later) — see [LICENSE](LICENSE). Copyright © 2026 Miguel Carino.
