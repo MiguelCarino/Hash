@@ -48,8 +48,54 @@
 
     /* panels */
     .panels{flex:1;min-height:0;position:relative;}
-    .panel{position:absolute;inset:0;display:none;flex-direction:column;min-height:0;}
+    .panel{position:absolute;inset:0;display:none;flex-direction:column;min-height:0;gap:11px;}
     .panel.active{display:flex;}
+    .panel.scroll{overflow-y:auto;padding-right:4px;}
+
+    /* ─── MAIN TABS ─────────────────────────────────────────── */
+    .tabbar{align-self:flex-start;}
+    .tabbar button{padding:8px 16px;font-size:0.68rem;}
+
+    /* ─── GENERATE ──────────────────────────────────────────── */
+    .gen-out{font-family:var(--mono);font-size:1.3rem;font-weight:700;word-break:break-all;line-height:1.5;
+      color:var(--accent);background:var(--bg-elev);border:2px dashed var(--border);border-radius:8px;
+      padding:16px 14px;cursor:pointer;text-align:center;transition:0.2s;}
+    .gen-out:hover{border-color:var(--accent);background:var(--bg-card);box-shadow:0 0 20px var(--accent-glow);}
+    .lenwrap{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:0.62rem;
+      text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);border:1px solid var(--border);
+      border-radius:7px;padding:5px 11px;}
+    .lenwrap input[type=range]{width:150px;accent-color:var(--accent);}
+    .lenwrap b{color:var(--accent);font-size:0.78rem;min-width:26px;text-align:right;}
+    .chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);border-radius:7px;
+      padding:6px 11px;font-family:var(--mono);font-size:0.62rem;color:var(--text-muted);cursor:pointer;
+      user-select:none;transition:0.15s;text-transform:uppercase;letter-spacing:0.05em;}
+    .chip:hover{border-color:var(--border-glow);color:var(--text-main);}
+    .chip input{display:none;}
+    .chip .bx{width:13px;height:13px;border:1.5px solid #333;border-radius:3px;display:flex;align-items:center;
+      justify-content:center;font-size:9px;font-weight:900;color:transparent;transition:0.15s;}
+    .chip input:checked + .bx{background:var(--accent);border-color:var(--accent);color:#050505;}
+    .chip input:checked + .bx::after{content:'✓';}
+    .chip.on{border-color:var(--border-glow);color:var(--text-main);}
+
+    /* ─── SHARE ─────────────────────────────────────────────── */
+    .ta{width:100%;background:var(--bg-elev);border:1px solid var(--border);border-radius:7px;padding:9px 11px;
+      color:var(--text-main);font-family:var(--mono);font-size:0.72rem;line-height:1.55;resize:vertical;outline:none;}
+    .ta:focus{border-color:var(--border-glow);}
+    .ta::placeholder{color:var(--text-dim);}
+    .sel{background:var(--bg-card);border:1px solid var(--border);border-radius:5px;color:var(--accent);
+      padding:3px 6px;font-family:var(--mono);font-size:0.72rem;font-weight:700;cursor:pointer;outline:none;}
+    .shrow{display:flex;align-items:flex-start;gap:8px;}
+    .shtag{font-family:var(--mono);font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;
+      color:var(--accent);border:1px solid var(--border-glow);border-radius:5px;padding:5px 7px;flex-shrink:0;white-space:nowrap;}
+    .shval{flex:1;font-family:var(--mono);font-size:0.66rem;line-height:1.6;color:var(--text-main);
+      background:var(--bg-elev);border:1px solid var(--border);border-radius:6px;padding:6px 9px;
+      word-break:break-all;white-space:pre-wrap;}
+    .alert{font-family:var(--mono);font-size:0.66rem;line-height:1.6;border-radius:0 6px 6px 0;padding:8px 11px;}
+    .alert.bad{background:rgba(239,68,68,0.06);border-left:2px solid var(--danger);color:var(--text-muted);}
+    .alert.bad b{color:var(--danger);}
+    .alert.ok{background:rgba(34,197,94,0.06);border-left:2px solid var(--ok);color:var(--text-muted);}
+    .alert.ok b{color:var(--ok);}
+    .hide{display:none !important;}
 
     /* DIGESTS */
     .dg-grid{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(370px,1fr));gap:9px;align-content:start;padding-right:4px;}
@@ -148,22 +194,82 @@
 <body>
 
   <div class="shell">
-    <!-- INPUT -->
-    <div class="inbar">
-      <div class="seg" id="inSeg">
-        <button class="active" data-in="text">Text</button>
-        <button data-in="file">File</button>
-      </div>
-      <input type="text" id="txt" spellcheck="false" value="abc" placeholder="Type anything…">
-      <button class="btn filebtn" id="fileBtn">📄 Choose file…</button>
-      <input type="file" id="fileInput" hidden>
-      <span class="inmeta" id="inMeta"></span>
+
+    <div class="seg tabbar" id="mainSeg">
+      <button class="active" data-tab="digests">Digests</button>
+      <button data-tab="generate">Generate</button>
+      <button data-tab="share">Share</button>
     </div>
 
     <div class="panels">
       <!-- DIGESTS -->
       <div class="panel active" id="panel-digests">
+        <div class="inbar">
+          <div class="seg" id="inSeg">
+            <button class="active" data-in="text">Text</button>
+            <button data-in="file">File</button>
+          </div>
+          <input type="text" id="txt" spellcheck="false" value="abc" placeholder="Type anything…">
+          <button class="btn filebtn" id="fileBtn">📄 Choose file…</button>
+          <input type="file" id="fileInput" hidden>
+          <span class="inmeta" id="inMeta"></span>
+        </div>
         <div class="dg-grid" id="dgGrid"></div>
+      </div>
+
+      <!-- GENERATE -->
+      <div class="panel scroll" id="panel-generate">
+        <div class="gen-out" id="genOut" title="Click to copy">…</div>
+        <div class="inbar">
+          <button class="btn primary" id="genNew">↻ Generate</button>
+          <button class="btn" id="genToShare">⑂ Split this</button>
+          <button class="btn" id="genToHash"># Digest this</button>
+          <label class="lenwrap">Length
+            <input type="range" id="genLen" min="8" max="128" value="32"><b id="genLenVal">32</b>
+          </label>
+        </div>
+        <div class="inbar" id="genSets"></div>
+        <div class="note" id="genEntropy"></div>
+      </div>
+
+      <!-- SHARE -->
+      <div class="panel scroll" id="panel-share">
+        <div class="seg" id="shareSeg" style="align-self:flex-start">
+          <button class="active" data-mode="split">Split</button>
+          <button data-mode="recover">Recover</button>
+        </div>
+
+        <div id="shareSplit" style="display:flex;flex-direction:column;gap:11px;">
+          <textarea class="ta" id="shSecret" rows="2" spellcheck="false" autocomplete="off"
+                    autocapitalize="off" autocorrect="off"
+                    placeholder="Secret to split — key, password, seed phrase, token…"></textarea>
+          <div class="inbar">
+            <label class="lenwrap">Shares <select class="sel" id="shTotal"></select></label>
+            <label class="lenwrap">Threshold <select class="sel" id="shNeeded"></select></label>
+            <label class="chip" id="shMsgChip">
+              <input type="checkbox" id="shMsg"><span class="bx"></span>Wrap with instructions
+            </label>
+            <button class="btn" id="shCopyAll">⧉ Copy all</button>
+          </div>
+          <div id="shError" class="alert bad hide"></div>
+          <div id="shOut" style="display:flex;flex-direction:column;gap:7px;"></div>
+          <div class="note" id="shSpec"></div>
+        </div>
+
+        <div id="shareRecover" class="hide" style="flex-direction:column;gap:11px;">
+          <textarea class="ta" id="shIn" rows="9" spellcheck="false" autocomplete="off"
+                    autocapitalize="off" autocorrect="off"
+                    placeholder="Paste shares, one per line. Surrounding instruction text is ignored."></textarea>
+          <div id="shInError" class="alert bad hide"></div>
+          <div id="shInOk" class="hide" style="flex-direction:column;gap:7px;">
+            <div class="shrow">
+              <span class="shtag">Recovered</span>
+              <div class="shval" id="shInText" style="cursor:pointer" title="Click to copy"></div>
+            </div>
+            <div class="alert ok"><b>Integrity verified.</b> The reconstruction matches the
+              SHA-256 tag carried inside the split payload — no share was mistyped or substituted.</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -202,6 +308,7 @@
 
   <div class="toast" id="toast"></div>
 
+<script src="carino-secrets.js"></script>
 <script>
 'use strict';
 /* ==========================================================================
@@ -809,10 +916,187 @@ $('#fileBtn').addEventListener('click',()=>$('#fileInput').click());
 $('#fileInput').addEventListener('change',e=>{ if(e.target.files.length) loadFile(e.target.files[0]); });
 async function loadFile(file){ try{ const buf=await file.arrayBuffer(); setInputBytes(new Uint8Array(buf),`${file.name} (${fmtSize(file.size)})`); $('#fileBtn').textContent='📄 '+file.name; }catch(e){ toast('Could not read file'); } }
 
+/* ==========================================================================
+   GENERATE — full control, with the entropy maths shown
+   ========================================================================== */
+const GEN_SETS = [
+  { id:'upper',  label:'A-Z',    chars:'ABCDEFGHIJKLMNOPQRSTUVWXYZ', on:true },
+  { id:'lower',  label:'a-z',    chars:'abcdefghijklmnopqrstuvwxyz', on:true },
+  { id:'digits', label:'0-9',    chars:'0123456789',                 on:true },
+  { id:'sym',    label:'!@#$',   chars:"!@#$%^&*()_+-=[]{}|;:',./<>?", on:true },
+];
+const AMBIGUOUS = 'iIl1oO0';
+
+(function buildGenSets(){
+  const wrap = $('#genSets');
+  GEN_SETS.forEach(s=>{
+    const l=document.createElement('label'); l.className='chip'+(s.on?' on':'');
+    const i=document.createElement('input'); i.type='checkbox'; i.checked=s.on; i.id='gen-'+s.id;
+    const b=document.createElement('span'); b.className='bx';
+    l.append(i,b,document.createTextNode(s.label));
+    i.addEventListener('change',()=>{ l.classList.toggle('on',i.checked); genNew(); });
+    wrap.appendChild(l);
+  });
+  const l=document.createElement('label'); l.className='chip on';
+  const i=document.createElement('input'); i.type='checkbox'; i.checked=true; i.id='gen-noamb';
+  const b=document.createElement('span'); b.className='bx';
+  l.append(i,b,document.createTextNode('Drop ambiguous'));
+  i.addEventListener('change',()=>{ l.classList.toggle('on',i.checked); genNew(); });
+  wrap.appendChild(l);
+})();
+
+function genCharset(){
+  let set = GEN_SETS.filter(s=>$('#gen-'+s.id).checked).map(s=>s.chars).join('');
+  if($('#gen-noamb').checked) set=[...set].filter(c=>!AMBIGUOUS.includes(c)).join('');
+  return set;
+}
+
+function genNew(){
+  const set = genCharset(), n = +$('#genLen').value;
+  $('#genLenVal').textContent = n;
+  if(!set){ $('#genOut').textContent='Select at least one character set.'; $('#genEntropy').textContent=''; return; }
+  const r = new Uint32Array(n); crypto.getRandomValues(r);
+  $('#genOut').textContent = Array.from(r, v=>set[v%set.length]).join('');
+  const bits = n * Math.log2(set.length);
+  $('#genEntropy').innerHTML =
+    `<b>≈ ${bits.toFixed(0)} bits of entropy</b> — ${n} characters drawn from a ${set.length}-symbol ` +
+    `alphabet (log₂(${set.length}) ≈ ${Math.log2(set.length).toFixed(2)} bits each), sampled from ` +
+    `<code>crypto.getRandomValues</code>. An exhaustive search averages 2<sup>${(bits-1).toFixed(0)}</sup> guesses.`;
+}
+
+$('#genLen').addEventListener('input',genNew);
+$('#genNew').addEventListener('click',genNew);
+$('#genOut').addEventListener('click',()=>{ navigator.clipboard.writeText($('#genOut').textContent).then(()=>toast('Copied')); });
+$('#genToShare').addEventListener('click',()=>{ $('#shSecret').value=$('#genOut').textContent; goTab('share'); shSplit(); });
+$('#genToHash').addEventListener('click',()=>{ $('#txt').value=$('#genOut').textContent; goTab('digests'); textChanged(); });
+
+/* ==========================================================================
+   SHARE — Shamir k-of-n, engine shared with password.carino.systems
+   ========================================================================== */
+const CS = window.CarinoSecrets;
+
+(function initShareSelects(){
+  const t=$('#shTotal');
+  for(let i=2;i<=CS.MAX_SHARES;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i; t.appendChild(o); }
+  t.value=3; syncNeeded();
+})();
+
+function syncNeeded(){
+  const total=+$('#shTotal').value, sel=$('#shNeeded'), prev=+sel.value||2;
+  sel.textContent='';
+  for(let i=2;i<=total;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i; sel.appendChild(o); }
+  sel.value=Math.min(prev,total);
+}
+
+let shTimer=null;
+const shSchedule = (d=220)=>{ clearTimeout(shTimer); shTimer=setTimeout(shSplit,d); };
+let shLast=[];
+
+async function shSplit(){
+  clearTimeout(shTimer);
+  const out=$('#shOut'); out.textContent=''; shLast=[];
+  $('#shError').classList.add('hide'); $('#shSpec').textContent='';
+  const secret=$('#shSecret').value;
+  if(!secret) return;
+
+  const n=+$('#shTotal').value, k=+$('#shNeeded').value;
+  let shares;
+  try{ shares=await CS.split(secret,n,k); }
+  catch(e){ return shFail('#shError',e.message); }
+
+  const wrap=$('#shMsg').checked;
+  const url='https://password.carino.systems/#open';
+  shLast=shares.map(s=>wrap?CS.message(s,url):s.text);
+
+  shares.forEach((s,i)=>{
+    const row=document.createElement('div'); row.className='shrow';
+    const tag=document.createElement('span'); tag.className='shtag'; tag.textContent=`${s.index} / ${n}`;
+    const val=document.createElement('div'); val.className='shval'; val.textContent=shLast[i];
+    val.style.cursor='pointer'; val.title='Click to copy';
+    val.addEventListener('click',()=>navigator.clipboard.writeText(shLast[i]).then(()=>toast(`Share ${s.index} copied`)));
+    row.append(tag,val); out.appendChild(row);
+  });
+
+  const bytes=new TextEncoder().encode(secret).length;
+  $('#shSpec').innerHTML =
+    `<b>${n} shares, threshold ${k}.</b> Any ${k} reconstruct; any ${k-1} are ` +
+    `information-theoretically independent of the secret — every candidate remains equally likely, ` +
+    `so no amount of computation helps. ${n===k?'With threshold = shares there is no redundancy: lose one and the secret is gone. ':''}` +
+    `Wire format <code>CS1-</code> + Crockford base32 of <code>[ver, k, x, y…, crc16]</code>, ` +
+    `${bytes} secret bytes + 3-byte SHA-256 tag split bytewise over GF(2⁸) with poly 0x11d. ` +
+    `Shares interoperate with <code>password.carino.systems</code>.`;
+}
+
+async function shRecover(){
+  $('#shInError').classList.add('hide'); $('#shInOk').classList.add('hide');
+  const text=$('#shIn').value;
+  if(!/CS[1IL]-/i.test(text)) return;
+  let out;
+  try{ out=await CS.recover(text); }
+  catch(e){ return shFail('#shInError',e.message); }
+  $('#shInText').textContent=out.secret;
+  $('#shInOk').classList.remove('hide'); $('#shInOk').style.display='flex';
+}
+
+// Text nodes, not innerHTML: these messages quote what was pasted in.
+function shFail(sel,msg){
+  const el=$(sel); el.textContent='';
+  const b=document.createElement('b'); b.textContent='Failed.';
+  el.append(b,document.createTextNode(' '+msg.charAt(0).toUpperCase()+msg.slice(1)+'.'));
+  el.classList.remove('hide');
+}
+
+$('#shSecret').addEventListener('input',()=>shSchedule());
+$('#shTotal').addEventListener('change',()=>{ syncNeeded(); shSchedule(0); });
+$('#shNeeded').addEventListener('change',()=>shSchedule(0));
+$('#shMsg').addEventListener('change',()=>{ $('#shMsgChip').classList.toggle('on',$('#shMsg').checked); shSchedule(0); });
+$('#shIn').addEventListener('input',()=>{ clearTimeout(shTimer); shTimer=setTimeout(shRecover,300); });
+$('#shInText').addEventListener('click',()=>navigator.clipboard.writeText($('#shInText').textContent).then(()=>toast('Copied')));
+$('#shCopyAll').addEventListener('click',()=>{
+  if(!shLast.length) return toast('Nothing to copy');
+  navigator.clipboard.writeText(shLast.join('\n\n')).then(()=>toast(`${shLast.length} shares copied`));
+});
+$$('#shareSeg button').forEach(b=>b.addEventListener('click',()=>goTab(b.dataset.mode==='split'?'share':'recover')));
+
+/* ==========================================================================
+   TABS — addressable by link
+   ========================================================================== */
+const TAB_ROUTES = { digests:'digests', hash:'digests', digest:'digests',
+                     generate:'generate', password:'generate', pass:'generate',
+                     share:'share', split:'share', recover:'share', combine:'share' };
+
+function applyRoute(){
+  const key=location.hash.replace(/^#\/?/,'').toLowerCase();
+  const tab=TAB_ROUTES[key]||'digests';
+  $$('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+tab));
+  $$('#mainSeg button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  if(tab==='share'){
+    const rec = key==='recover'||key==='combine';
+    $('#shareSplit').classList.toggle('hide',rec);
+    $('#shareSplit').style.display=rec?'':'flex';
+    $('#shareRecover').classList.toggle('hide',!rec);
+    $('#shareRecover').style.display=rec?'flex':'';
+    $$('#shareSeg button').forEach(b=>b.classList.toggle('active',(b.dataset.mode==='recover')===rec));
+  }
+}
+
+// Clicking writes the hash; the listener switches, so Back works and every
+// panel is a link you can send someone.
+function goTab(name){
+  if(location.hash.replace(/^#\/?/,'').toLowerCase()===name) return applyRoute();
+  location.hash=name;
+}
+
+$$('#mainSeg button').forEach(b=>b.addEventListener('click',()=>goTab(b.dataset.tab)));
+window.addEventListener('hashchange',applyRoute);
+
 /* boot */
 buildCards(); renderInMeta();
 recomputeAll();
+genNew();
+applyRoute();
 </script>
 <script src="carino-navbar.js" data-app="Hash" defer></script>
+
 </body>
 </html>
