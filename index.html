@@ -10,12 +10,12 @@
 
   <style>
     :root{
-      --accent:#eab308; --accent-faint:rgba(234,179,8,0.06); --accent-glow:rgba(234,179,8,0.15);
+      --accent:#eab308; --accent-faint:rgba(234,179,8,0.05); --accent-glow:rgba(234,179,8,0.15);
       --primary-hover:#fbbf24;
-      --bg-body:#050505; --bg-surface:#0b0b0b; --bg-elev:#0d0d0d; --bg-card:#0f0f0f;
-      --text-main:#f5f5f5; --text-muted:#8a8a8a; --text-dim:#666;
+      --bg-body:#050505; --bg-surface:#0b0b0b; --bg-elev:#0d0d0d; --bg-card:#0b0b0b;
+      --text-main:#fff; --text-muted:#a3a3a3; --text-dim:#666;
       --border:#262626; --border-glow:#3a3320;
-      --ok:#22c55e; --danger:#ef4444; --warn:#f59e0b; --info:#38bdf8; --pq:#a78bfa;
+      --ok:#22c55e; --danger:#ef4444; --warn:#eab308; --info:#38bdf8; --pq:#a78bfa;
       --sans:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
       --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
       --display:'Red Hat Display',var(--sans);
@@ -105,7 +105,7 @@
     .dg-yr{font-family:var(--mono);font-size:0.56rem;color:var(--text-dim);}
     .badge{font-family:var(--mono);font-size:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;padding:2px 5px;border-radius:4px;border:1px solid var(--border);white-space:nowrap;}
     .badge.secure{color:var(--ok);border-color:rgba(34,197,94,0.4);}
-    .badge.legacy{color:var(--warn);border-color:rgba(245,158,11,0.4);}
+    .badge.legacy{color:var(--warn);border-color:rgba(234,179,8,0.4);}
     .badge.broken{color:var(--danger);border-color:rgba(239,68,68,0.45);}
     .badge.checksum{color:var(--info);border-color:rgba(56,189,248,0.4);}
     .badge.pq{color:var(--pq);border-color:rgba(167,139,250,0.5);}
@@ -151,13 +151,13 @@
     .rd .v{color:var(--text-main);word-break:break-all;}
     .rd .v.hi{color:var(--accent);}
     .regs{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;}
-    .rcell{border:1px solid var(--border);border-radius:6px;padding:5px 6px;background:#0a0a0a;transition:0.2s;}
+    .rcell{border:1px solid var(--border);border-radius:6px;padding:5px 6px;background:var(--bg-card);transition:0.2s;}
     .rcell .k{font-family:var(--mono);font-size:0.56rem;color:var(--text-dim);}
     .rcell .v{font-family:var(--mono);font-size:0.72rem;color:var(--text-main);word-break:break-all;}
     .rcell.hot{border-color:var(--accent);background:rgba(234,179,8,0.09);box-shadow:0 0 12px var(--accent-glow);}
     .rcell.hot .v{color:var(--accent);}
     .grid-cells{display:grid;gap:3px;}
-    .gcell{font-family:var(--mono);font-size:0.5rem;text-align:center;padding:3px 1px;border-radius:3px;background:#0a0a0a;border:1px solid #1a1a1a;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .gcell{font-family:var(--mono);font-size:0.5rem;text-align:center;padding:3px 1px;border-radius:3px;background:var(--bg-card);border:1px solid #1a1a1a;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .gcell.on{color:var(--text-muted);border-color:#333;}
     .gcell.cur{background:var(--accent);color:#050505;border-color:var(--accent);font-weight:700;}
     .gcell.one{background:rgba(234,179,8,0.15);color:var(--accent);border-color:var(--accent);}
@@ -471,7 +471,6 @@ function md5(bytes, rec){
   const {dv,total,bitlen}=padMD(bytes,true);
   if(rec) step(rec,{phase:'pad',note:'<b>MD5</b> (1992). Four 32‑bit registers, <b>64 operations</b> in 4 rounds over each 512‑bit block. Once ubiquitous; collisions have been practical since 2004.',regs:[],grid:paddingGrid(bytes,bitlen,false),log:`padded to ${total} bytes`});
   let a0=0x67452301,b0=0xefcdab89,c0=0x98badcfe,d0=0x10325476;
-  const nb=total/64;
   for(let off=0,bi=0;off<total;off+=64,bi++){
     const M=[]; for(let j=0;j<16;j++) M[j]=dv.getUint32(off+j*4,true);
     let A=a0,B=b0,C=c0,D=d0;
@@ -580,7 +579,7 @@ function sha512(bytes, rec){
 const M64=(1n<<64n)-1n;
 const KECCAK_RC=[0x1n,0x8082n,0x800000000000808An,0x8000000080008000n,0x808Bn,0x80000001n,0x8000000080008081n,0x8000000000008009n,0x8An,0x88n,0x80008009n,0x8000000An,0x8000808Bn,0x800000000000008Bn,0x8000000000008089n,0x8000000000008003n,0x8000000000008002n,0x8000000000000080n,0x800An,0x800000008000000An,0x8000000080008081n,0x8000000000008080n,0x80000001n,0x8000000080008008n];
 const KECCAK_R=[[0,36,3,41,18],[1,44,10,45,2],[62,6,43,15,61],[28,55,25,21,56],[27,20,39,8,14]];
-function keccakF(A, rec, absorbNote){
+function keccakF(A, rec){
   const rotl=(x,n)=>{ n=BigInt(n); return ((x<<n)|(x>>(64n-n)))&M64; };
   for(let r=0;r<24;r++){
     const C=new Array(5), D=new Array(5);
@@ -726,7 +725,7 @@ function createPlayer(p){
   // p: {ids for play,step,back,reset,speed,prog,note,rd,regs,data,dataH,detailH,log}
   let steps=[], i=0, playing=false, timer=null;
   const el=id=>document.getElementById(id);
-  function load(tr){ steps=tr.steps; i=0; stop(); tr.note && (currentNote=tr.note); paint(); }
+  function load(tr){ steps=tr.steps; i=0; stop(); paint(); }
   function paint(){
     if(!steps.length){ return; }
     const s=steps[Math.max(0,Math.min(i,steps.length-1))];
