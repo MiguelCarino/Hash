@@ -196,9 +196,9 @@
   <div class="shell">
 
     <div class="seg tabbar" id="mainSeg">
-      <button class="active" data-tab="digests">Digests</button>
-      <button data-tab="generate">Generate</button>
-      <button data-tab="share">Share</button>
+      <button class="active" data-tab="digests" data-i18n>Digests</button>
+      <button data-tab="generate" data-i18n>Generate</button>
+      <button data-tab="share" data-i18n>Share</button>
     </div>
 
     <div class="panels">
@@ -206,11 +206,11 @@
       <div class="panel active" id="panel-digests">
         <div class="inbar">
           <div class="seg" id="inSeg">
-            <button class="active" data-in="text">Text</button>
-            <button data-in="file">File</button>
+            <button class="active" data-in="text" data-i18n>Text</button>
+            <button data-in="file" data-i18n>File</button>
           </div>
           <input type="text" id="txt" spellcheck="false" value="abc" placeholder="Type anything…">
-          <button class="btn filebtn" id="fileBtn">📄 Choose file…</button>
+          <button class="btn filebtn" id="fileBtn" data-i18n>📄 Choose file…</button>
           <input type="file" id="fileInput" hidden>
           <span class="inmeta" id="inMeta"></span>
         </div>
@@ -221,10 +221,10 @@
       <div class="panel scroll" id="panel-generate">
         <div class="gen-out" id="genOut" title="Click to copy">…</div>
         <div class="inbar">
-          <button class="btn primary" id="genNew">↻ Generate</button>
-          <button class="btn" id="genToShare">⑂ Split this</button>
-          <button class="btn" id="genToHash"># Digest this</button>
-          <label class="lenwrap">Length
+          <button class="btn primary" id="genNew" data-i18n>↻ Generate</button>
+          <button class="btn" id="genToShare" data-i18n>⑂ Split this</button>
+          <button class="btn" id="genToHash" data-i18n># Digest this</button>
+          <label class="lenwrap"><span data-i18n>Length</span>
             <input type="range" id="genLen" min="8" max="128" value="32"><b id="genLenVal">32</b>
           </label>
         </div>
@@ -235,8 +235,8 @@
       <!-- SHARE -->
       <div class="panel scroll" id="panel-share">
         <div class="seg" id="shareSeg" style="align-self:flex-start">
-          <button class="active" data-mode="split">Split</button>
-          <button data-mode="recover">Recover</button>
+          <button class="active" data-mode="split" data-i18n>Split</button>
+          <button data-mode="recover" data-i18n>Recover</button>
         </div>
 
         <div id="shareSplit" style="display:flex;flex-direction:column;gap:11px;">
@@ -244,12 +244,12 @@
                     autocapitalize="off" autocorrect="off"
                     placeholder="Secret to split — key, password, seed phrase, token…"></textarea>
           <div class="inbar">
-            <label class="lenwrap">Shares <select class="sel" id="shTotal"></select></label>
-            <label class="lenwrap">Threshold <select class="sel" id="shNeeded"></select></label>
+            <label class="lenwrap"><span data-i18n>Shares</span> <select class="sel" id="shTotal"></select></label>
+            <label class="lenwrap"><span data-i18n>Threshold</span> <select class="sel" id="shNeeded"></select></label>
             <label class="chip" id="shMsgChip">
-              <input type="checkbox" id="shMsg"><span class="bx"></span>Wrap with instructions
+              <input type="checkbox" id="shMsg"><span class="bx"></span><span data-i18n>Wrap with instructions</span>
             </label>
-            <button class="btn" id="shCopyAll">⧉ Copy all</button>
+            <button class="btn" id="shCopyAll" data-i18n>⧉ Copy all</button>
           </div>
           <div id="shError" class="alert bad hide"></div>
           <div id="shOut" style="display:flex;flex-direction:column;gap:7px;"></div>
@@ -263,11 +263,10 @@
           <div id="shInError" class="alert bad hide"></div>
           <div id="shInOk" class="hide" style="flex-direction:column;gap:7px;">
             <div class="shrow">
-              <span class="shtag">Recovered</span>
+              <span class="shtag" data-i18n>Recovered</span>
               <div class="shval" id="shInText" style="cursor:pointer" title="Click to copy"></div>
             </div>
-            <div class="alert ok"><b>Integrity verified.</b> The reconstruction matches the
-              SHA-256 tag carried inside the split payload — no share was mistyped or substituted.</div>
+            <div class="alert ok"><b data-i18n>Integrity verified.</b> <span data-i18n>The reconstruction matches the SHA-256 tag carried inside the split payload — no share was mistyped or substituted.</span></div>
           </div>
         </div>
       </div>
@@ -280,27 +279,27 @@
       <div class="modal-head">
         <div><h2 id="mTitle"></h2><div class="modal-sub" id="mSub"></div></div>
         <div style="display:flex;gap:8px;flex-shrink:0;">
-          <button class="btn" id="mPrint" title="Print / save these steps as a PDF">🖨 Print steps</button>
-          <button class="btn" id="mClose">✕ Close</button>
+          <button class="btn" id="mPrint" title="Print / save these steps as a PDF" data-i18n>🖨 Print steps</button>
+          <button class="btn" id="mClose" data-i18n>✕ Close</button>
         </div>
       </div>
       <div class="modal-intro" id="mIntro"></div>
-      <div class="modal-legend">You're watching a real computation on <b id="mInput"></b>. <b>State</b> = the algorithm's scratch memory · <b>Data</b> = your message being processed · <b>Log</b> = a running transcript. Use Step to go one operation at a time, or Play to watch it run.</div>
+      <div class="modal-legend"><span data-i18n>You're watching a real computation on</span> <b id="mInput"></b>. <b data-i18n>State</b> = <span data-i18n>the algorithm's scratch memory</span> · <b data-i18n>Data</b> = <span data-i18n>your message being processed</span> · <b data-i18n>Log</b> = <span data-i18n>a running transcript.</span> <span data-i18n>Use Step to go one operation at a time, or Play to watch it run.</span></div>
       <div class="viz modal-viz">
         <div class="viz-ctrls">
-          <button class="btn primary" id="mPlay">▶ Play</button>
-          <button class="btn" id="mStep">⏭ Step</button>
-          <button class="btn" id="mBack">⏮ Back</button>
-          <button class="btn" id="mReset">Reset</button>
-          <label style="font-family:var(--mono);font-size:0.62rem;color:var(--text-muted);display:flex;align-items:center;gap:5px;">Speed
+          <button class="btn primary" id="mPlay" data-i18n>▶ Play</button>
+          <button class="btn" id="mStep" data-i18n>⏭ Step</button>
+          <button class="btn" id="mBack" data-i18n>⏮ Back</button>
+          <button class="btn" id="mReset" data-i18n>Reset</button>
+          <label style="font-family:var(--mono);font-size:0.62rem;color:var(--text-muted);display:flex;align-items:center;gap:5px;"><span data-i18n>Speed</span>
             <input type="range" id="mSpeed" min="1" max="60" value="10" style="width:96px;"></label>
           <span class="prog" id="mProg"></span>
         </div>
         <div class="viz-body">
-          <div class="vpanel detail"><h4 id="mDetailH">What's happening</h4><div class="note" id="mNote"></div><div class="math" id="mMath" style="display:none"></div><div class="rd" id="mRd"></div></div>
-          <div class="vpanel state"><h4>State — the working memory</h4><div class="regs" id="mRegs"></div></div>
+          <div class="vpanel detail"><h4 id="mDetailH" data-i18n>What's happening</h4><div class="note" id="mNote"></div><div class="math" id="mMath" style="display:none"></div><div class="rd" id="mRd"></div></div>
+          <div class="vpanel state"><h4 data-i18n>State — the working memory</h4><div class="regs" id="mRegs"></div></div>
           <div class="vpanel data"><h4 id="mDataH">Data</h4><div id="mData"></div></div>
-          <div class="vpanel log"><h4>Operation log</h4><div class="oplog" id="mLog"></div></div>
+          <div class="vpanel log"><h4 data-i18n>Operation log</h4><div class="oplog" id="mLog"></div></div>
         </div>
       </div>
     </div>
@@ -318,6 +317,7 @@
    ========================================================================== */
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
+const T = s => (typeof window.t === 'function' ? window.t(s) : s);   // the i18n dictionary loads deferred; falls back to English before it runs
 function toast(m){ const t=$('#toast'); t.textContent=m; t.className='toast show'; clearTimeout(t._to); t._to=setTimeout(()=>t.className='toast',1500); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function fmtSize(n){ if(n<1024) return n+' B'; const u=['KB','MB','GB']; let i=-1; do{n/=1024;i++;}while(n>=1024&&i<u.length-1); return n.toFixed(n<10?2:1)+' '+u[i]; }
@@ -676,26 +676,26 @@ const ALGOS=[
    ========================================================================== */
 let currentBytes=new TextEncoder().encode('abc'), currentLabel='text (3 bytes)', recomputeTimer=null;
 function setInputBytes(bytes,label){ currentBytes=bytes; currentLabel=label; renderInMeta(); clearTimeout(recomputeTimer); recomputeTimer=setTimeout(recomputeAll,120); }
-function renderInMeta(){ $('#inMeta').innerHTML=`<b>${currentBytes.length.toLocaleString()}</b> bytes · <b>${(currentBytes.length*8).toLocaleString()}</b> bits`; }
+function renderInMeta(){ $('#inMeta').innerHTML=`<b>${currentBytes.length.toLocaleString()}</b> ${T('bytes')} · <b>${(currentBytes.length*8).toLocaleString()}</b> ${T('bits')}`; }
 
 function buildCards(){
   $('#dgGrid').innerHTML=ALGOS.map(a=>`
     <div class="dg">
       <div class="dg-h"><span class="dg-name">${a.name}</span><span class="dg-yr">${a.year}</span>
-        <span class="badge ${a.badge}">${a.badge==='pq'?'PQ‑ready':a.status}</span></div>
+        <span class="badge ${a.badge}">${T(a.badge==='pq'?'PQ‑ready':a.status)}</span></div>
       <div class="dg-val pending" id="v-${a.id}">…</div>
       <div class="dg-foot"><span class="verify" id="ver-${a.id}"></span>
-        <span style="display:flex;gap:6px;"><button class="btn mini steps" data-steps="${a.id}">▶ Steps</button>${a.signature?'':`<button class="btn mini" data-copy="${a.id}">Copy</button>`}</span></div>
-      <div class="dg-expl">${a.expl}</div>
-      <div class="dg-pq">⚛ ${a.pq}</div>
+        <span style="display:flex;gap:6px;"><button class="btn mini steps" data-steps="${a.id}">${T('▶ Steps')}</button>${a.signature?'':`<button class="btn mini" data-copy="${a.id}">${T('Copy')}</button>`}</span></div>
+      <div class="dg-expl">${T(a.expl)}</div>
+      <div class="dg-pq">⚛ ${T(a.pq)}</div>
     </div>`).join('');
   $$('[data-copy]').forEach(b=>b.addEventListener('click',()=>{ const el=$('#v-'+b.dataset.copy); if(el.textContent&&!el.classList.contains('pending')){ navigator.clipboard?.writeText(el.textContent); toast('Copied '+b.dataset.copy); }}));
   $$('[data-steps]').forEach(b=>b.addEventListener('click',()=>openSteps(b.dataset.steps)));
 }
 async function computeCard(a){
   const el=$('#v-'+a.id), ver=$('#ver-'+a.id); ver.textContent='';
-  if(a.signature){ el.classList.remove('pending'); el.innerHTML='<span class="sig-note">Hash‑based one‑time signature — press <b>▶ Steps</b> to watch keygen → sign → verify → tamper on the current input.</span>'; return; }
-  el.textContent='computing…'; el.classList.add('pending');
+  if(a.signature){ el.classList.remove('pending'); el.innerHTML='<span class="sig-note">'+T('Hash‑based one‑time signature — press <b>▶ Steps</b> to watch keygen → sign → verify → tamper on the current input.')+'</span>'; return; }
+  el.textContent=T('computing…'); el.classList.add('pending');
   await new Promise(r=>setTimeout(r,0));               // let the UI paint "computing…"
   let val = a.fn ? a.fn(currentBytes,null) : null;
   if(a.subtleAlg){ const sv=await subtle(a.subtleAlg,currentBytes);
@@ -743,8 +743,8 @@ function createPlayer(p){
   }
   function fwd(){ if(i<steps.length-1){ i++; paint(); } else stop(); }
   function back(){ if(i>0){ i--; paint(); } }
-  function stop(){ playing=false; clearInterval(timer); timer=null; el(p.play).textContent='▶ Play'; }
-  function play(){ if(!steps.length) return; if(playing){ stop(); return; } playing=true; el(p.play).textContent='⏸ Pause';
+  function stop(){ playing=false; clearInterval(timer); timer=null; el(p.play).textContent=T('▶ Play'); }
+  function play(){ if(!steps.length) return; if(playing){ stop(); return; } playing=true; el(p.play).textContent=T('⏸ Pause');
     timer=setInterval(()=>{ if(i>=steps.length-1){ stop(); return; } fwd(); }, Math.max(16,1000/(+el(p.speed).value))); }
   el(p.play).addEventListener('click',play);
   el(p.step).addEventListener('click',()=>{ stop(); fwd(); });
@@ -760,7 +760,7 @@ function openSteps(id){
   const a=ALGOS.find(x=>x.id===id); if(!a) return;
   $('#mTitle').innerHTML=`${a.name}<span class="yr">${a.year}</span>`;
   $('#mSub').textContent=a.signature?`${a.family} · post‑quantum`:`${a.bits}‑bit digest · ${a.family}`;
-  $('#mIntro').innerHTML=a.intro||a.expl;
+  $('#mIntro').innerHTML=T(a.intro||a.expl);
   $('#mInput').textContent=currentLabel;
   let bytes=currentBytes, trimmed=false;
   if(bytes.length>TRACE_LIMIT){ bytes=bytes.slice(0,TRACE_LIMIT); trimmed=true; }
@@ -818,11 +818,11 @@ let LOGO_URI='';
 (function(){ try{ fetch('logo.webp').then(r=>r.ok?r.blob():null).then(b=>{ if(!b)return; const fr=new FileReader(); fr.onload=()=>LOGO_URI=fr.result; fr.readAsDataURL(b); }).catch(()=>{}); }catch(e){} })();
 // Print the FULL step-by-step of the algorithm currently open in the modal.
 function printSteps(){
-  if(!modalTrace){ toast('Open a card’s Steps walkthrough first'); return; }
+  if(!modalTrace){ toast(T('Open a card’s Steps walkthrough first')); return; }
   const a=modalTrace.algo, steps=modalTrace.steps;
   const now=new Date(); const p2=n=>String(n).padStart(2,'0'); const stamp=now.getFullYear()+'-'+p2(now.getMonth()+1)+'-'+p2(now.getDate())+' '+p2(now.getHours())+':'+p2(now.getMinutes());
   const cardVal=($('#v-'+a.id).textContent||'').trim();
-  const digest=a.signature?'Hash‑based one‑time signature — keygen → sign → verify → tamper':(/^[0-9a-f]+$/i.test(cardVal)?cardVal:'(not computed — large input; use “Compute” on the card)');
+  const digest=a.signature?T('Hash‑based one‑time signature — keygen → sign → verify → tamper'):(/^[0-9a-f]+$/i.test(cardVal)?cardVal:T('(not computed — large input; use “Compute” on the card)'));
   const logo=LOGO_URI?`<img class="logo" src="${LOGO_URI}" alt="Carino">`:'';
 
   // When a run of steps repeats the same explanation (e.g. 64 identical SHA‑256
@@ -886,12 +886,12 @@ function printSteps(){
     footer{margin-top:20px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:#9aa0a8;}
     @media print{body{margin:0;}@page{margin:14mm;}}
   </style></head><body>
-    <header class="ph"><div><h1>${esc(a.name)} — how it works, step by step</h1><div class="sub">${a.year} · ${a.bits}‑bit · ${esc(a.family)} · input: ${esc(modalTrace.input)} · generated ${stamp}</div></div><div style="text-align:right">${logo}<div class="brand">Carino Hash</div></div></header>
-    <div class="intro">${a.intro||a.expl}</div>
-    <div class="dg">${a.signature?'Scheme':'Digest of this input'}: <b>${esc(digest)}</b></div>
+    <header class="ph"><div><h1>${esc(a.name)} — ${T('how it works, step by step')}</h1><div class="sub">${a.year} · ${a.bits}‑bit · ${esc(a.family)} · input: ${esc(modalTrace.input)} · generated ${stamp}</div></div><div style="text-align:right">${logo}<div class="brand">Carino Hash</div></div></header>
+    <div class="intro">${T(a.intro||a.expl)}</div>
+    <div class="dg">${T(a.signature?'Scheme':'Digest of this input')}: <b>${esc(digest)}</b></div>
     <h2>The ${steps.length} steps</h2>
     ${stepHtml}
-    <footer>Generated locally by Carino Hash — an educational walkthrough. Nothing left this device.${modalTrace.trimmed?' Large input: steps cover the first '+TRACE_LIMIT.toLocaleString()+' bytes.':''}</footer>
+    <footer>${T('Generated locally by Carino Hash — an educational walkthrough. Nothing left this device.')}${modalTrace.trimmed?' Large input: steps cover the first '+TRACE_LIMIT.toLocaleString()+' bytes.':''}</footer>
   </body></html>`;
 
   const ifr=document.createElement('iframe'); ifr.setAttribute('aria-hidden','true'); ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;'; document.body.appendChild(ifr);
@@ -913,7 +913,7 @@ function textChanged(){ const e=new TextEncoder().encode($('#txt').value); setIn
 $('#txt').addEventListener('input',textChanged);
 $('#fileBtn').addEventListener('click',()=>$('#fileInput').click());
 $('#fileInput').addEventListener('change',e=>{ if(e.target.files.length) loadFile(e.target.files[0]); });
-async function loadFile(file){ try{ const buf=await file.arrayBuffer(); setInputBytes(new Uint8Array(buf),`${file.name} (${fmtSize(file.size)})`); $('#fileBtn').textContent='📄 '+file.name; }catch(e){ toast('Could not read file'); } }
+async function loadFile(file){ try{ const buf=await file.arrayBuffer(); setInputBytes(new Uint8Array(buf),`${file.name} (${fmtSize(file.size)})`); $('#fileBtn').textContent='📄 '+file.name; $('#fileBtn').dataset.i18nKey='📄 '+file.name; }catch(e){ toast(T('Could not read file')); } }
 
 /* ==========================================================================
    GENERATE — full control, with the entropy maths shown
@@ -939,7 +939,8 @@ const AMBIGUOUS = 'iIl1oO0';
   const l=document.createElement('label'); l.className='chip on';
   const i=document.createElement('input'); i.type='checkbox'; i.checked=true; i.id='gen-noamb';
   const b=document.createElement('span'); b.className='bx';
-  l.append(i,b,document.createTextNode('Drop ambiguous'));
+  const tx=document.createElement('span'); tx.setAttribute('data-i18n',''); tx.textContent='Drop ambiguous';
+  l.append(i,b,tx);
   i.addEventListener('change',()=>{ l.classList.toggle('on',i.checked); genNew(); });
   wrap.appendChild(l);
 })();
@@ -953,7 +954,7 @@ function genCharset(){
 function genNew(){
   const set = genCharset(), n = +$('#genLen').value;
   $('#genLenVal').textContent = n;
-  if(!set){ $('#genOut').textContent='Select at least one character set.'; $('#genEntropy').textContent=''; return; }
+  if(!set){ $('#genOut').textContent=T('Select at least one character set.'); $('#genEntropy').textContent=''; return; }
   const r = new Uint32Array(n); crypto.getRandomValues(r);
   $('#genOut').textContent = Array.from(r, v=>set[v%set.length]).join('');
   const bits = n * Math.log2(set.length);
@@ -965,7 +966,7 @@ function genNew(){
 
 $('#genLen').addEventListener('input',genNew);
 $('#genNew').addEventListener('click',genNew);
-$('#genOut').addEventListener('click',()=>{ navigator.clipboard.writeText($('#genOut').textContent).then(()=>toast('Copied')); });
+$('#genOut').addEventListener('click',()=>{ navigator.clipboard.writeText($('#genOut').textContent).then(()=>toast(T('Copied'))); });
 $('#genToShare').addEventListener('click',()=>{ $('#shSecret').value=$('#genOut').textContent; goTab('share'); shSplit(); });
 $('#genToHash').addEventListener('click',()=>{ $('#txt').value=$('#genOut').textContent; goTab('digests'); textChanged(); });
 
@@ -1011,7 +1012,7 @@ async function shSplit(){
     const row=document.createElement('div'); row.className='shrow';
     const tag=document.createElement('span'); tag.className='shtag'; tag.textContent=`${s.index} / ${n}`;
     const val=document.createElement('div'); val.className='shval'; val.textContent=shLast[i];
-    val.style.cursor='pointer'; val.title='Click to copy';
+    val.style.cursor='pointer'; val.title=T('Click to copy');
     val.addEventListener('click',()=>navigator.clipboard.writeText(shLast[i]).then(()=>toast(`Share ${s.index} copied`)));
     row.append(tag,val); out.appendChild(row);
   });
@@ -1040,7 +1041,7 @@ async function shRecover(){
 // Text nodes, not innerHTML: these messages quote what was pasted in.
 function shFail(sel,msg){
   const el=$(sel); el.textContent='';
-  const b=document.createElement('b'); b.textContent='Failed.';
+  const b=document.createElement('b'); b.textContent=T('Failed.');
   el.append(b,document.createTextNode(' '+msg.charAt(0).toUpperCase()+msg.slice(1)+'.'));
   el.classList.remove('hide');
 }
@@ -1050,9 +1051,9 @@ $('#shTotal').addEventListener('change',()=>{ syncNeeded(); shSchedule(0); });
 $('#shNeeded').addEventListener('change',()=>shSchedule(0));
 $('#shMsg').addEventListener('change',()=>{ $('#shMsgChip').classList.toggle('on',$('#shMsg').checked); shSchedule(0); });
 $('#shIn').addEventListener('input',()=>{ clearTimeout(shTimer); shTimer=setTimeout(shRecover,300); });
-$('#shInText').addEventListener('click',()=>navigator.clipboard.writeText($('#shInText').textContent).then(()=>toast('Copied')));
+$('#shInText').addEventListener('click',()=>navigator.clipboard.writeText($('#shInText').textContent).then(()=>toast(T('Copied'))));
 $('#shCopyAll').addEventListener('click',()=>{
-  if(!shLast.length) return toast('Nothing to copy');
+  if(!shLast.length) return toast(T('Nothing to copy'));
   navigator.clipboard.writeText(shLast.join('\n\n')).then(()=>toast(`${shLast.length} shares copied`));
 });
 $$('#shareSeg button').forEach(b=>b.addEventListener('click',()=>goTab(b.dataset.mode==='split'?'share':'recover')));
@@ -1097,6 +1098,7 @@ applyRoute();
 </script>
 <script src="carino-navbar.js" data-app="Hash" defer></script>
 <script src="carino-lang.js" defer></script>
+<script src="i18n.js" defer></script>
 
 </body>
 </html>
