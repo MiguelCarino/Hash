@@ -9,6 +9,10 @@
 
 const I18N = {
     es: {
+        'Late shift.': 'Turno nocturno.',
+        'Good morning.': 'Buenos días.',
+        'Good afternoon.': 'Buenas tardes.',
+        'Good evening.': 'Buenas noches.',
         // Tabs + input bar
         'Digests': 'Hashes',
         'Generate': 'Generar',
@@ -125,6 +129,10 @@ const I18N = {
         "Not a digest but a <b>signature</b> scheme — included because it shows what hashing alone can do in the post‑quantum world. The threat: a big quantum computer running <b>Shor's algorithm</b> would instantly break RSA and elliptic‑curve signatures, which lean on hard number theory. A hash has no such structure to exploit — the best a quantum attacker manages is <b>Grover's algorithm</b>, which only takes a square‑root‑sized bite out of its strength (why SHA‑512 and SHA3‑512 stay safe). Lamport turns that toughness into a signature: your key is 256 pairs of random secrets, you publish their SHA‑256 hashes, and to sign a message you reveal exactly one secret per bit of its digest. Anyone can re‑hash the revealed secrets to check them, yet nobody can forge a different message without a secret you never handed out. The catch is in the name — each key signs <b>once</b>. (Real systems like XMSS and NIST's SPHINCS+ stack many Lamport‑style keys into a tree to sign safely many times.)": 'No es un digest sino un esquema de <b>firma</b> — incluido porque muestra lo que el hashing por sí solo puede hacer en el mundo post‑cuántico. La amenaza: un gran ordenador cuántico ejecutando el <b>algoritmo de Shor</b> rompería al instante RSA y las firmas de curva elíptica, que se apoyan en teoría de números difícil. Un hash no tiene esa estructura que explotar — lo mejor que logra un atacante cuántico es el <b>algoritmo de Grover</b>, que solo le quita una raíz cuadrada de fuerza (por eso SHA‑512 y SHA3‑512 siguen a salvo). Lamport convierte esa dureza en una firma: tu clave son 256 pares de secretos aleatorios, publicas sus hashes SHA‑256, y para firmar un mensaje revelas exactamente un secreto por bit de su digest. Cualquiera puede volver a hashear los secretos revelados para comprobarlos, pero nadie puede falsificar un mensaje distinto sin un secreto que nunca entregaste. La pega está en el nombre — cada clave firma <b>una vez</b>. (Los sistemas reales como XMSS y SPHINCS+ del NIST apilan muchas claves estilo Lamport en un árbol para firmar muchas veces con seguridad.)',
     },
     'pt-BR': {
+        'Late shift.': 'Turno da noite.',
+        'Good morning.': 'Bom dia.',
+        'Good afternoon.': 'Boa tarde.',
+        'Good evening.': 'Boa noite.',
         'Digests': 'Hashes',
         'Generate': 'Gerar',
         'Share': 'Compartilhar',
@@ -230,6 +238,10 @@ const I18N = {
         "Not a digest but a <b>signature</b> scheme — included because it shows what hashing alone can do in the post‑quantum world. The threat: a big quantum computer running <b>Shor's algorithm</b> would instantly break RSA and elliptic‑curve signatures, which lean on hard number theory. A hash has no such structure to exploit — the best a quantum attacker manages is <b>Grover's algorithm</b>, which only takes a square‑root‑sized bite out of its strength (why SHA‑512 and SHA3‑512 stay safe). Lamport turns that toughness into a signature: your key is 256 pairs of random secrets, you publish their SHA‑256 hashes, and to sign a message you reveal exactly one secret per bit of its digest. Anyone can re‑hash the revealed secrets to check them, yet nobody can forge a different message without a secret you never handed out. The catch is in the name — each key signs <b>once</b>. (Real systems like XMSS and NIST's SPHINCS+ stack many Lamport‑style keys into a tree to sign safely many times.)": 'Não é um digest e sim um esquema de <b>assinatura</b> — incluído porque mostra o que só o hashing consegue fazer no mundo pós‑quântico. A ameaça: um grande computador quântico rodando o <b>algoritmo de Shor</b> quebraria na hora o RSA e as assinaturas de curva elíptica, que se apoiam em teoria dos números difícil. Um hash não tem essa estrutura para explorar — o melhor que um atacante quântico consegue é o <b>algoritmo de Grover</b>, que só arranca uma mordida do tamanho de uma raiz quadrada da sua força (por isso SHA‑512 e SHA3‑512 continuam seguros). O Lamport transforma essa dureza numa assinatura: sua chave são 256 pares de segredos aleatórios, você publica os hashes SHA‑256 deles, e para assinar uma mensagem revela exatamente um segredo por bit do digest dela. Qualquer um pode re-hashear os segredos revelados para conferi-los, mas ninguém consegue forjar uma mensagem diferente sem um segredo que você nunca entregou. O porém está no nome — cada chave assina <b>uma vez</b>. (Sistemas reais como o XMSS e o SPHINCS+ do NIST empilham muitas chaves estilo Lamport numa árvore para assinar muitas vezes com segurança.)',
     },
     ja: {
+        'Late shift.': '夜勤お疲れさま。',
+        'Good morning.': 'おはようございます。',
+        'Good afternoon.': 'こんにちは。',
+        'Good evening.': 'こんばんは。',
         'Digests': 'ダイジェスト',
         'Generate': '生成',
         'Share': '秘密分散',
@@ -335,6 +347,10 @@ const I18N = {
         "Not a digest but a <b>signature</b> scheme — included because it shows what hashing alone can do in the post‑quantum world. The threat: a big quantum computer running <b>Shor's algorithm</b> would instantly break RSA and elliptic‑curve signatures, which lean on hard number theory. A hash has no such structure to exploit — the best a quantum attacker manages is <b>Grover's algorithm</b>, which only takes a square‑root‑sized bite out of its strength (why SHA‑512 and SHA3‑512 stay safe). Lamport turns that toughness into a signature: your key is 256 pairs of random secrets, you publish their SHA‑256 hashes, and to sign a message you reveal exactly one secret per bit of its digest. Anyone can re‑hash the revealed secrets to check them, yet nobody can forge a different message without a secret you never handed out. The catch is in the name — each key signs <b>once</b>. (Real systems like XMSS and NIST's SPHINCS+ stack many Lamport‑style keys into a tree to sign safely many times.)": 'ダイジェストではなく<b>署名</b>方式です — ハッシュだけで耐量子の世界で何ができるかを示すために収録しました。脅威はこうです: <b>Shor のアルゴリズム</b>を走らせる大型量子コンピュータは、難しい数論に依存する RSA や楕円曲線署名を一瞬で破ります。ハッシュにはそうした攻略可能な構造がありません — 量子攻撃者にできる最善は<b>Grover のアルゴリズム</b>で、強度を平方根分だけ削るのが関の山です（SHA‑512 や SHA3‑512 が安全なままな理由）。Lamport はその頑丈さを署名に変えます: 鍵は256組のランダムな秘密のペアで、その SHA‑256 ハッシュを公開し、メッセージに署名するときはダイジェストの各ビットにつき秘密をちょうど1つずつ明かします。誰でも明かされた秘密をハッシュし直して確認できますが、渡していない秘密なしに別のメッセージを偽造することは誰にもできません。落とし穴は名前のとおり — 各鍵で署名できるのは<b>一度きり</b>です。（XMSS や NIST の SPHINCS+ のような実システムは、Lamport 型の鍵を木構造に多数積み上げて、安全に何度も署名できるようにしています。）',
     },
     ru: {
+        'Late shift.': 'Ночная смена.',
+        'Good morning.': 'Доброе утро.',
+        'Good afternoon.': 'Добрый день.',
+        'Good evening.': 'Добрый вечер.',
         'Digests': 'Дайджесты',
         'Generate': 'Генератор',
         'Share': 'Разделение',
