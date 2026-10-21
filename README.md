@@ -2,6 +2,8 @@
 
 The full client-side crypto workbench → **[hash.carino.systems](https://hash.carino.systems)**
 
+![Carino Hash](screenshot.webp)
+
 Three panels, each addressable by link:
 
 | Panel | Link | What it does |
