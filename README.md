@@ -4,33 +4,42 @@ The full client-side crypto workbench → **[hash.carino.systems](https://hash.c
 
 ![Carino Hash](screenshot.webp)
 
-Three panels, each addressable by link:
+A course in seven modules, each addressable by link (`#md`, `#md/stage-2`,
+`#md/lab`, `#md/reference`):
 
-| Panel | Link | What it does |
+| Module | Link | Algorithms |
 |---|---|---|
-| **Digests** | `#digests` | 15 algorithms over text or a file, each with a step-by-step walkthrough |
-| **Generate** | `#generate` | password generation with full character-set control and the entropy maths shown |
-| **Share** | `#share`, `#recover` | Shamir *k*-of-*n* secret splitting and recovery |
+| **Checksums** | `#checksums` | Checksum-8, BSD sum, Fletcher-16, Adler-32, CRC-32 |
+| **Legacy hashes** | `#legacy` | Pearson |
+| **MD family** | `#md` | MD2, MD4, MD5 |
+| **SHA-1 and SHA-2** | `#sha` | SHA-1, SHA-256, SHA-512 |
+| **SHA-3** | `#sha3` | SHA3-256, SHA3-512 |
+| **Post-quantum** | `#pq` | Lamport one-time signature |
+| **Compare** | `#compare` | every algorithm on your input, side by side |
+
+Each module page opens with the step-player lab on that family, then one stage per
+algorithm with a **Done** tick, then an at-a-glance table. Progress is ticked by you
+and kept in this browser only (`localStorage['hash.<module>']`); the navbar's
+Progress menu exports and imports it as a JSON file and resets it.
 
 Drop in a file or type text and watch a hash actually get computed — the padding,
 the message schedule, and every one of **SHA-256's 64 rounds**, step by step.
 Nothing is uploaded; everything runs in the browser.
 
-The plain-language counterpart, for people who need to hand a password to a
-colleague without meeting the word "threshold", is
-**[password.carino.systems](https://password.carino.systems)**. Both sites vendor
-the same [`carino-secrets.js`](carino-secrets.js), so **shares made on either one
-open on the other** — keep that file byte-identical across repos.
+Password generation and secret splitting moved to
+**[password.carino.systems](https://password.carino.systems)** (its "More control"
+panels have the exact length, character sets, entropy maths and *k*-of-*n*
+splitting that used to live here). Old links (`#generate`, `#share`, `#recover`)
+redirect there.
 
 ## Features
 
-- **No-scroll, single-view shell** — one grid of algorithm cards; the whole app
-  fits one viewport and only the grid scrolls. Every card carries its era, output
-  size, security badge, a plain-language note, and a ⚛ line on its quantum
-  standing (e.g. *~128-bit vs Grover*, *broken classically*, *not cryptographic*).
-- **Per-card "Steps" walkthrough** — every card has a ▶ Steps button that
-  opens a modal overlay: a plain-language intro ("the padlock in your browser…"),
-  a legend explaining each panel, and a play / step / back / reset stepper that
+- **A course, not a wall of cards** — six family modules plus a Compare lab. Every
+  algorithm keeps its era, output size, security badge, a plain-language note, and
+  a ⚛ line on its quantum standing (e.g. *~128-bit vs Grover*, *broken classically*).
+- **Step-player lab** — each module page opens with an inline player: a legend
+  explaining each panel, and a play / step / back / reset stepper (Space plays,
+  ← → step) that
   animates the algorithm's real internals — byte-by-byte for the checksums;
   padding, schedule and rounds for the MD/SHA families; the θ·ρ·π·χ·ι sponge
   rounds with the live 5×5 lane state for Keccak/SHA-3.
@@ -56,17 +65,7 @@ open on the other** — keep that file byte-identical across repos.
   input. Its intro explains why hashing survives quantum attacks (Shor breaks
   RSA/ECC, but a hash only loses a square-root to Grover — so SHA-512/SHA3-512
   stay safe), the same reasoning surfaced on every card's ⚛ line.
-- **Secret splitting, in full** — Shamir over GF(2⁸): pick any *n* up to 10 and
-  any threshold *k*, split as you type, and emit shares either raw or wrapped in
-  a forwardable instruction message. Recovery verifies against a SHA-256 tag
-  carried inside the split payload, so mistyped or mismatched shares are refused
-  rather than silently returning a wrong secret. Shares interoperate with
-  `password.carino.systems`.
-- **Password generation with the maths shown** — full character-set control and
-  an entropy readout: alphabet size, bits per character, total bits, and the
-  average number of guesses an exhaustive search costs. One click sends the
-  result to the Share panel or the digest input.
-- **Print the steps** — each Steps overlay has its own "🖨 Print steps" button
+- **Print the steps** — the lab has a "🖨 Print steps" button
   that exports that algorithm's *complete* walkthrough as a clean branded PDF:
   intro, digest, and every numbered step with its plain explanation, "In math
   terms" formula, and values.
