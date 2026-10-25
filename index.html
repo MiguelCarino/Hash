@@ -49,21 +49,10 @@
     body.state-module .overview-head{display:none;}
     .slice-menu{width:min(1280px,calc(100% - 32px));margin:0 auto 28px;}
     body.state-module .slice-menu{width:100%;margin:0;background:#050505;}
-    body.state-overview .slice-menu{flex-wrap:wrap;}
-    body.state-overview .slice-menu .slice{flex:1 1 280px;min-width:240px;justify-content:flex-start;gap:8px;padding:22px 20px;border-bottom:1px solid var(--border);}
-    body.state-overview .slice-menu .slice:hover,body.state-overview .slice-menu .slice:focus-visible{flex:1.12 1 280px;}
-    body.state-overview .slice .s-text{font-size:var(--fs-h3);}
     .s-algos{font-family:var(--mono);font-size:var(--fs-label);color:var(--text-muted);}
-    .s-prog{display:flex;align-items:center;gap:10px;width:100%;margin-top:auto;padding-top:6px;}
-    .s-prog .progress{flex:1;height:5px;}
-    .s-prog .progress>span,.prog-bar-wrap .progress>span{transition:width .4s ease;}
-    .s-count{font-family:var(--mono);font-size:var(--fs-label);color:var(--text-muted);white-space:nowrap;}
-    .slice.is-complete .s-count{color:var(--accent);}
-    body.state-module .slice-menu .s-algos,body.state-module .slice-menu .s-prog{display:none;}
-    @media(max-width:640px){
-      body.state-overview .slice-menu .slice{flex:none;min-width:0;padding:18px 16px;}
-      body.state-overview .slice-menu .slice:hover{flex:none;}
-    }
+    /* the count and its bar sit at the foot of the tile, level across a row */
+    .s-prog>span,.prog-bar-wrap .progress>span{transition:width .4s ease;}
+    body.state-module .slice-menu .s-algos{display:none;}
 
     /* ─── MODULE PAGE ───────────────────────────────────────── */
     .mod-hero,.lab-wrap,.layout,.page-alerts,.site-foot{max-width:1280px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px;}
@@ -219,7 +208,7 @@
     </div>
   </header>
 
-  <nav class="slice-menu" id="sliceMenu" aria-label="Modules"></nav>
+  <nav class="slice-menu grid" id="sliceMenu" aria-label="Modules"></nav>
 
   <div class="page-alerts" id="pageAlerts"></div>
 
@@ -1002,7 +991,8 @@ function buildSlices(){
       <span class="s-text">${esc(T(m.title))}</span>
       <span class="s-blurb">${esc(T(m.blurb))}</span>
       <span class="s-algos">${m.compare?esc(T('All {n} algorithms').replace('{n}',ALGOS.length)):m.algos.map(id=>esc(algoById(id).name)).join(' · ')}</span>
-      <span class="s-prog"><span class="progress fluid"><span style="width:0%"></span></span><span class="s-count"></span></span>
+      <span class="s-count"></span>
+      <span class="progress fluid s-prog"><span style="width:0%"></span></span>
     </a>`).join('');
 }
 
@@ -1100,35 +1090,32 @@ $('#allDoneBtn').addEventListener('click',()=>{
 });
 
 /* ---------- routing: #module, #module/stage-N, #module/lab, #module/reference ----------
-   Same contract as CarinoUI.slices (body.state-overview / .state-module,
-   .collapsed, .active + aria-current), plus the part after the slash. */
+   CarinoUI.slices (body.state-overview / .state-module, .collapsed, .active +
+   aria-current); the part after the slash arrives as params.path. */
 // The old tabs moved: Digests is the Compare module, Generate and Share are on Password.
 const MOVED={ generate:'make', password:'make', pass:'make', share:'send', split:'send', recover:'open', combine:'open' };
-function markSlices(id){
-  const menu=$('#sliceMenu');
-  document.body.classList.toggle('state-module',!!id);
-  document.body.classList.toggle('state-overview',!id);
-  menu.classList.toggle('collapsed',!!id);
-  $$('.slice',menu).forEach(s=>{ const on=s.dataset.id===id; s.classList.toggle('active',on);
-    if(on){ s.setAttribute('aria-current','page'); menu.scrollLeft=s.offsetLeft-(menu.clientWidth-s.offsetWidth)/2; } else s.removeAttribute('aria-current'); });
-  $('#modPage').hidden=!id;
+// An id the menu does not know: an old tab, or an old spelling (#SHA2, #/sha2).
+function legacyRoute(){
+  const [id0,anchor]=location.hash.replace(/^#\/?/,'').split(/[\/&]/), id=(id0||'').toLowerCase();
+  if(MOVED[id]){ location.replace('https://password.carino.systems/#'+MOVED[id]); return true; }
+  if(id==='digests'||id==='hash'||id==='digest'){ location.replace('#compare'); return true; }
+  if(modById(id)){ location.replace('#'+id+(anchor?'/'+anchor:'')); return true; }
+  return false;
 }
-function route(){
-  const raw=location.hash.replace(/^#\/?/,'');
-  const [id0,anchor]=raw.split('/'), id=id0.toLowerCase();
-  if(MOVED[id]){ location.replace('https://password.carino.systems/#'+MOVED[id]); return; }
-  if(id==='digests'||id==='hash'||id==='digest'){ location.replace('#compare'); return; }
-  const m=modById(id);
-  if(!m){ active=null; done=new Set(); player.stop(); markSlices(null); refreshProgress(); window.scrollTo(0,0); return; }
+let slices=null, quietRoute=false;
+function route(id,params){
+  const m=modById(id), anchor=!quietRoute&&params.path;
+  $('#modPage').hidden=!m;
+  if(!m){ if(location.hash.length>1&&legacyRoute()) return;
+    active=null; done=new Set(); player.stop(); refreshProgress(); if(!quietRoute) window.scrollTo(0,0); return; }
   if(m.id!==active){
-    active=m.id; done=doneFor(m.id); markSlices(m.id); renderModule(m);
+    active=m.id; done=doneFor(m.id); renderModule(m);
     requestAnimationFrame(()=>{ const t=anchor&&document.getElementById(anchor); if(t) t.scrollIntoView({block:'start'}); else window.scrollTo(0,0); });
   } else {
     if(pendingAlgo&&m.algos.includes(pendingAlgo)){ selectAlgo(pendingAlgo); pendingAlgo=null; }
     const t=anchor&&document.getElementById(anchor); if(t) t.scrollIntoView({block:'start'});
   }
 }
-window.addEventListener('hashchange',route);
 
 /* ---------- reset (Branding modal, never confirm()) ---------- */
 let lastFocus=null;
@@ -1186,12 +1173,16 @@ $('#fileInput').addEventListener('change',e=>{ if(e.target.files.length) loadFil
 async function loadFile(file){ try{ const buf=await file.arrayBuffer(); setInputBytes(new Uint8Array(buf),`${file.name} (${fmtSize(file.size)})`); $('#fileBtn').textContent='📄 '+file.name; $('#fileBtn').dataset.i18nKey='📄 '+file.name; }catch(e){ toast(T('Could not read file')); } }
 
 // i18n.js calls this after a language switch, to rebuild JS-made text.
-window.renderPage=()=>{ renderInMeta(); buildSlices(); if(active){ const keep=labAlgo; pendingAlgo=keep; renderModule(modById(active)); markSlices(active); } else refreshProgress(); };
+window.renderPage=()=>{ renderInMeta(); buildSlices(); if(active){ const keep=labAlgo; pendingAlgo=keep; renderModule(modById(active)); }
+  else refreshProgress();
+  // the rebuilt tiles need their .active state again, without scrolling to the hash's anchor
+  if(slices){ quietRoute=true; slices.route(); quietRoute=false; } };
 
 /* boot */
 try{ const k='hash.__probe'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ storeFailed(); }
 buildSlices(); renderInMeta();
-route();
+// carino-ui.js is deferred: it has run by DOMContentLoaded.
+document.addEventListener('DOMContentLoaded',()=>{ slices=CarinoUI.slices({ menu:$('#sliceMenu'), onRoute:route }); });
 </script>
 <script src="carino-navbar.js" data-app="Hash" data-repo="Hash" defer></script>
 <script src="carino-lang.js" defer></script>
