@@ -734,7 +734,9 @@ function showAlert(kind,text,sticky){
 /* ==========================================================================
    Input + digests
    ========================================================================== */
-let currentBytes=new TextEncoder().encode('abc'), currentLabel='text (3 bytes)', recomputeTimer=null;
+let currentBytes=new TextEncoder().encode('abc'), currentLabel=null, recomputeTimer=null;
+// null = typed text, labelled at render time so the label follows the locale.
+const inputLabel=()=>currentLabel===null?T('text ({n} bytes)').replace('{n}',currentBytes.length):currentLabel;
 function setInputBytes(bytes,label){ currentBytes=bytes; currentLabel=label; renderInMeta(); clearTimeout(recomputeTimer); recomputeTimer=setTimeout(()=>{ recomputeAll(); if(labAlgo) loadAlgo(labAlgo); },120); }
 function renderInMeta(){ $('#inMeta').innerHTML=`<b>${currentBytes.length.toLocaleString()}</b> ${T('bytes')} · <b>${(currentBytes.length*8).toLocaleString()}</b> ${T('bits')}`; }
 
@@ -743,7 +745,7 @@ const badgeOf=a=>`<span class="badge ${a.badge}">${T(a.badge==='pq'?'PQ‑ready'
 function buildCards(){
   $('#dgGrid').innerHTML=ALGOS.map(a=>`
     <div class="dg">
-      <div class="dg-h"><span class="dg-name">${a.name}</span><span class="dg-yr">${a.year}</span>${badgeOf(a)}</div>
+      <div class="dg-h"><span class="dg-name">${a.name}</span><span class="dg-yr">${T(a.year)}</span>${badgeOf(a)}</div>
       <div class="dg-val pending" id="v-${a.id}">…</div>
       <div class="dg-foot"><span class="verify" id="ver-${a.id}"></span>
         <span style="display:flex;gap:6px;"><button type="button" class="btn mini" data-steps="${a.id}">${T('▶ Steps')}</button>${a.signature?'':`<button type="button" class="btn mini" data-copy="${a.id}">${T('Copy')}</button>`}</span></div>
@@ -758,7 +760,7 @@ async function computeCard(a){
   await new Promise(r=>setTimeout(r,0));               // let the UI paint "computing…"
   let val = a.fn ? a.fn(currentBytes,null) : null;
   if(a.subtleAlg){ const sv=await subtle(a.subtleAlg,currentBytes);
-    if(sv){ if(a.verify && val){ const ok=val===sv; ver.textContent=ok?'✓ matches Web Crypto':'✗ mismatch'; ver.className='verify'+(ok?'':' bad'); } val=sv; } }
+    if(sv){ if(a.verify && val){ const ok=val===sv; ver.textContent=ok?T('✓ matches Web Crypto'):T('✗ mismatch'); ver.className='verify'+(ok?'':' bad'); } val=sv; } }
   if($('#v-'+a.id)!==el) return;                        // the page moved on meanwhile
   el.textContent=val||'—'; el.classList.remove('pending');
 }
@@ -769,8 +771,8 @@ async function recomputeAll(){
     if(a.signature){ await computeCard(a); continue; }   // signatures don't produce a digest
     if(big){
       el.classList.add('pending');
-      el.innerHTML=`<span class="big-note">Large input (${fmtSize(currentBytes.length)}) — not hashed automatically to keep things responsive.</span>`+
-                   `<button type="button" class="btn mini btn-primary" data-compute="${a.id}">Compute ${esc(a.name)} now</button>`;
+      el.innerHTML=`<span class="big-note">${esc(T('Large input ({size}) — not hashed automatically to keep things responsive.').replace('{size}',fmtSize(currentBytes.length)))}</span>`+
+                   `<button type="button" class="btn mini btn-primary" data-compute="${a.id}">${esc(T('Compute {name} now').replace('{name}',a.name))}</button>`;
       continue;
     }
     await computeCard(a);
@@ -796,13 +798,13 @@ function createPlayer(p){
   function paint(){
     if(!steps.length){ return; }
     const s=steps[Math.max(0,Math.min(i,steps.length-1))];
-    if(p.detailH) el(p.detailH).textContent=s.phase||'Operation';
+    if(p.detailH) el(p.detailH).textContent=s.phase||T('Operation');
     el(p.note).innerHTML=s.note||'';
-    if(p.math){ const me=el(p.math); if(s.math){ me.hidden=false; me.innerHTML=`<span class="lbl">In math terms</span>${s.math}`; } else me.hidden=true; }
+    if(p.math){ const me=el(p.math); if(s.math){ me.hidden=false; me.innerHTML=`<span class="lbl">${T('In math terms')}</span>${s.math}`; } else me.hidden=true; }
     el(p.rd).innerHTML=(s.rows||[]).map(r=>`<span class="k">${esc(r[0])}</span><span class="v${r[2]?' hi':''}">${esc(r[1])}</span>`).join('');
     el(p.regs).innerHTML=(s.regs||[]).map(r=>`<div class="rcell${r.hot?' hot':''}"><div class="k">${esc(r.k)}</div><div class="v">${esc(r.v)}</div></div>`).join('');
-    if(s.grid){ el(p.dataH).textContent=s.grid.title||'Data'; el(p.data).innerHTML=`<div class="grid-cells" style="grid-template-columns:repeat(${s.grid.cols},1fr)">`+s.grid.cells.map(c=>`<span class="gcell ${c.cls||''}">${esc(c.v)}</span>`).join('')+`</div>`; }
-    else { el(p.data).innerHTML=''; }
+    if(s.grid){ el(p.dataH).textContent=s.grid.title||T('Data'); el(p.data).innerHTML=`<div class="grid-cells" style="grid-template-columns:repeat(${s.grid.cols},1fr)">`+s.grid.cells.map(c=>`<span class="gcell ${c.cls||''}">${esc(c.v)}</span>`).join('')+`</div>`; }
+    else { el(p.dataH).textContent=T('Data'); el(p.data).innerHTML=''; }
     // op log up to i
     let log=''; for(let j=0;j<=i && j<steps.length;j++){ if(steps[j].log) log+=(log?'\n':'')+steps[j].log; }
     const lg=el(p.log); lg.textContent=log; lg.parentElement.scrollTop=lg.parentElement.scrollHeight;
@@ -830,8 +832,8 @@ function loadAlgo(id){
   const a=algoById(id); if(!a) return;
   labAlgo=id;
   $('#labTitle').textContent=T('Step through {name}').replace('{name}',a.name);
-  $('#labBlurb').innerHTML=`${a.year} · ${a.signature?T('post‑quantum signature'):a.bits+'‑bit'} · ${esc(a.family)}. ${T(a.expl)}`;
-  $('#mInput').textContent=currentLabel;
+  $('#labBlurb').innerHTML=`${T(a.year)} · ${a.signature?T('post‑quantum signature'):T('{n}‑bit').replace('{n}',a.bits)} · ${esc(T(a.family))}. ${T(a.expl)}`;
+  $('#mInput').textContent=inputLabel();
   let bytes=currentBytes, trimmed=false;
   if(bytes.length>TRACE_LIMIT){ bytes=bytes.slice(0,TRACE_LIMIT); trimmed=true; }
   const rec=mkRec(STEP_CAP);
@@ -839,7 +841,7 @@ function loadAlgo(id){
   catch(e){ console.warn('step trace failed for '+id,e); $('#mNote').innerHTML=`<div class="alert err">${esc(T("This lab couldn't start. The reading still works."))}</div>`; return; }
   if(trimmed) rec.steps.unshift({phase:'a quick note',note:`Your input is large, so this walkthrough follows just the first <b>${TRACE_LIMIT.toLocaleString()} bytes</b> to stay snappy. The full digest is on the card once you compute it.`,regs:[],log:'(input trimmed for the walkthrough)'});
   if(rec.trunc) rec.steps.push({phase:'…and so on',note:`We stopped after <b>${STEP_CAP}</b> steps so the transcript stays readable — the remaining rounds repeat the exact same moves. The final digest on the card is complete and exact.`,regs:[],log:'… (further steps omitted)'});
-  labTrace={ algo:a, steps:rec.steps, input:currentLabel, trimmed };
+  labTrace={ algo:a, steps:rec.steps, input:inputLabel(), trimmed };
   player.load({steps:rec.steps});
 }
 function selectAlgo(id){
@@ -926,12 +928,12 @@ function printSteps(){
     return `<div class="step${repeat?' repeat':''}">
       <div class="sh"><span class="num">${i+1}</span><span class="phase">${esc(s.phase||'')}</span></div>
       ${showNote?`<div class="note">${s.note}</div>`:''}
-      ${showMath?`<div class="math"><span class="lbl">In math terms</span>${s.math}</div>`:''}
+      ${showMath?`<div class="math"><span class="lbl">${T('In math terms')}</span>${s.math}</div>`:''}
       ${body}
     </div>`;
   }).join('');
 
-  const doc=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(a.name)} — steps</title><style>
+  const doc=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(T('{name} — steps').replace('{name}',a.name))}</title><style>
     :root{--primary:#b45309;--ink:#1f2937;--muted:#6b7280;--line:#e5e7eb;--blue:#0369a1;} html{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     *{box-sizing:border-box;} body{font:12px/1.55 'IBM Plex Sans',Arial,sans-serif;color:var(--ink);margin:24px;}
     sub,sup{font-size:0.8em;}
@@ -963,12 +965,12 @@ function printSteps(){
     footer{margin-top:20px;padding-top:8px;border-top:1px solid var(--line);font-size:10px;color:#9aa0a8;}
     @media print{body{margin:0;}@page{margin:14mm;}}
   </style></head><body>
-    <header class="ph"><div><h1>${esc(a.name)} — ${T('how it works, step by step')}</h1><div class="sub">${a.year} · ${a.bits}‑bit · ${esc(a.family)} · input: ${esc(labTrace.input)} · generated ${stamp}</div></div><div style="text-align:right">${logo}<div class="brand">Carino Hash</div></div></header>
+    <header class="ph"><div><h1>${esc(a.name)} — ${T('how it works, step by step')}</h1><div class="sub">${T(a.year)} · ${T('{n}‑bit').replace('{n}',a.bits)} · ${esc(T(a.family))} · ${T('input')}: ${esc(labTrace.input)} · ${T('generated')} ${stamp}</div></div><div style="text-align:right">${logo}<div class="brand">Carino Hash</div></div></header>
     <div class="intro">${T(a.intro||a.expl)}</div>
     <div class="dg">${T(a.signature?'Scheme':'Digest of this input')}: <b>${esc(digest)}</b></div>
-    <h2>The ${steps.length} steps</h2>
+    <h2>${T('The {n} steps').replace('{n}',steps.length)}</h2>
     ${stepHtml}
-    <footer>${T('Generated locally by Carino Hash — an educational walkthrough. Nothing left this device.')}${labTrace.trimmed?' Large input: steps cover the first '+TRACE_LIMIT.toLocaleString()+' bytes.':''}</footer>
+    <footer>${T('Generated locally by Carino Hash — an educational walkthrough. Nothing left this device.')}${labTrace.trimmed?' '+T('Large input: steps cover the first {n} bytes.').replace('{n}',TRACE_LIMIT.toLocaleString()):''}</footer>
   </body></html>`;
 
   const ifr=document.createElement('iframe'); ifr.setAttribute('aria-hidden','true'); ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;'; document.body.appendChild(ifr);
@@ -1000,7 +1002,7 @@ function stageCard(m,id,n){
   const isDone=done.has(id), a=m.compare?null:algoById(id);
   const el=document.createElement('article');
   el.className='stage'+(isDone?' is-done':''); el.id='stage-'+n; el.dataset.id=id;
-  const title=a?`${esc(a.name)} <span class="dg-yr">${a.year}</span>${badgeOf(a)}`:esc(T(COMPARE_STAGE.name));
+  const title=a?`${esc(a.name)} <span class="dg-yr">${T(a.year)}</span>${badgeOf(a)}`:esc(T(COMPARE_STAGE.name));
   el.innerHTML=`
     <div class="stage-head">
       <div><div class="stage-num">${T('Stage {n}').replace('{n}',n)}</div><h3 class="stage-title">${title}</h3></div>
@@ -1050,7 +1052,7 @@ function renderModule(m){
   const host=$('#stages'); host.innerHTML='';
   stagesOf(m).forEach((id,i)=>host.appendChild(stageCard(m,id,i+1)));
   // reference
-  const rows=(m.compare?ALGOS:m.algos.map(algoById)).map(a=>`<tr><td>${esc(a.name)}</td><td>${a.year}</td><td>${a.signature?'—':a.bits+'‑bit'}</td><td>${esc(a.family)}</td><td>${badgeOf(a)}</td><td>${esc(T(a.pq))}</td></tr>`).join('');
+  const rows=(m.compare?ALGOS:m.algos.map(algoById)).map(a=>`<tr><td>${esc(a.name)}</td><td>${T(a.year)}</td><td>${a.signature?'—':T('{n}‑bit').replace('{n}',a.bits)}</td><td>${esc(T(a.family))}</td><td>${badgeOf(a)}</td><td>${esc(T(a.pq))}</td></tr>`).join('');
   $('#refTable').innerHTML=`<thead><tr><th>${T('Algorithm')}</th><th>${T('Year')}</th><th>${T('Output')}</th><th>${T('Family')}</th><th>${T('Status')}</th><th>${T('Against quantum computers')}</th></tr></thead><tbody>${rows}</tbody>`;
   recomputeAll();
   refreshProgress();
@@ -1166,7 +1168,7 @@ $$('#inSeg .toggle-btn').forEach(b=>b.addEventListener('click',()=>{
   const isText=b.dataset.in==='text'; $('#txt').hidden=!isText; $('#fileBtn').hidden=isText;
   if(isText) textChanged();
 }));
-function textChanged(){ const e=new TextEncoder().encode($('#txt').value); setInputBytes(e,`text (${e.length} bytes)`); }
+function textChanged(){ const e=new TextEncoder().encode($('#txt').value); setInputBytes(e,null); }
 $('#txt').addEventListener('input',textChanged);
 $('#fileBtn').addEventListener('click',()=>$('#fileInput').click());
 $('#fileInput').addEventListener('change',e=>{ if(e.target.files.length) loadFile(e.target.files[0]); });
