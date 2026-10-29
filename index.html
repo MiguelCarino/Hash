@@ -205,6 +205,11 @@
     :root[data-carino-theme="color"] .badge.secure{border-color:var(--ok);} :root[data-carino-theme="color"] .badge.legacy{border-color:var(--warn);}
     :root[data-carino-theme="color"] .badge.broken{border-color:var(--err);} :root[data-carino-theme="color"] .badge.checksum{border-color:var(--info);}
     :root[data-carino-theme="color"] .badge.pq{border-color:var(--pq);}
+    /* Colourful: the lab legend's State / Data words share their panel's hue */
+    :root[data-carino-theme="color"] .vpanel.state h4,:root[data-carino-theme="color"] .lab-legend b:nth-of-type(2){color:var(--ct-purple);}
+    :root[data-carino-theme="color"] .vpanel.data h4,:root[data-carino-theme="color"] .lab-legend b:nth-of-type(3){color:var(--ct-pink);}
+    /* keep purple meaning only 'State' on this page: the shared lab kicker goes indigo here */
+    :root[data-carino-theme="color"] .lab-kicker{color:var(--ct-indigo);}
   </style>
 </head>
 <body class="state-overview">
