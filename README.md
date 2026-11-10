@@ -66,9 +66,11 @@ redirect there.
   RSA/ECC, but a hash only loses a square-root to Grover — so SHA-512/SHA3-512
   stay safe), the same reasoning surfaced on every card's ⚛ line.
 - **Print the steps** — the lab has a "🖨 Print steps" button
-  that exports that algorithm's *complete* walkthrough as a clean branded PDF:
-  intro, digest, and every numbered step with its plain explanation, "In math
-  terms" formula, and values.
+  that previews that algorithm's *complete* walkthrough as a clean branded
+  report: intro, digest, and every numbered step with its plain explanation,
+  "In math terms" formula, and values. From the preview: Print, or Download as
+  PDF or HTML (the File switch; the PDF is drawn on the device by the shared
+  `carino-pdf.js`, so its text is a picture). Tests: `node --test tests/*.test.mjs`.
 
 ## Design
 

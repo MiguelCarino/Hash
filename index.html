@@ -356,22 +356,25 @@
     </div>
   </div>
 
-  <!-- Print preview: "Print steps" shows the document here first; Print prints this frame, ✕ drops it.
-       Fleet .rpv layout: every control in the left column, Print at its foot. -->
+  <!-- Report preview: "Print steps" shows the document here first; Print prints this frame,
+       Download saves it as the File switch says (PDF or HTML, carino-pdf.js), ✕ drops it.
+       Fleet .rpv layout: every control in the left column, the switch just above the
+       file name, Print then Download (primary, last) at its foot. -->
   <div class="modal-scrim rpv-scrim" id="rpModal" hidden>
     <div class="rpv" role="dialog" aria-modal="true" aria-labelledby="rpTitle">
       <aside class="rpv-side">
         <div class="rpv-head">
-          <h2 class="rpv-title" id="rpTitle" data-i18n>Print preview</h2>
+          <h2 class="rpv-title" id="rpTitle" data-i18n>Report preview</h2>
           <button type="button" class="modal-x rpv-x" id="rpX" title="Close" aria-label="Close">✕</button>
         </div>
         <p class="rpv-status" id="rpStatus" role="status" aria-live="polite"></p>
         <p class="rpv-name" id="rpName"></p>
         <div class="rpv-actions">
-          <button type="button" class="btn btn-primary" id="rpPrint" disabled data-i18n>🖨 Print</button>
+          <button type="button" class="btn" id="rpPrint" disabled data-i18n>🖨 Print</button>
+          <button type="button" class="btn btn-primary" id="rpDownload" disabled>Download PDF</button>
         </div>
       </aside>
-      <div class="rpv-stage" id="rpStage"><iframe id="rpFrame" class="rpv-frame" title="Print preview"></iframe></div>
+      <div class="rpv-stage" id="rpStage"><iframe id="rpFrame" class="rpv-frame" title="Report preview"></iframe></div>
     </div>
   </div>
 
@@ -966,7 +969,8 @@ function lamportTrace(bytes, rec){
 let LOGO_URI='';
 (function(){ try{ fetch('logo.webp').then(r=>r.ok?r.blob():null).then(b=>{ if(!b)return; const fr=new FileReader(); fr.onload=()=>LOGO_URI=fr.result; fr.readAsDataURL(b); }).catch(()=>{}); }catch(e){} })();
 // The FULL step-by-step of the algorithm currently in the lab, as one printable
-// HTML document: { html, title }. The preview shows it and Print prints it.
+// HTML document: { html, title, name }. The preview shows it, Print prints it and
+// Download saves it as PDF or HTML (name: the file's stem, no extension).
 function stepsDoc(){
   const a=labTrace.algo, steps=labTrace.steps;
   const now=new Date(); const p2=n=>String(n).padStart(2,'0'); const stamp=now.getFullYear()+'-'+p2(now.getMonth()+1)+'-'+p2(now.getDate())+' '+p2(now.getHours())+':'+p2(now.getMinutes());
@@ -1004,6 +1008,7 @@ function stepsDoc(){
   }).join('');
 
   const title=T('{name} — steps').replace('{name}',a.name);
+  const name='carino-hash-'+String(a.id||'steps').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')+'-steps-'+stamp.slice(0,10);
   const doc=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>
     :root{--primary:#b45309;--ink:#1f2937;--muted:#6b7280;--line:#e5e7eb;--blue:#0369a1;} html{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     *{box-sizing:border-box;} body{font:12px/1.55 'IBM Plex Sans',Arial,sans-serif;color:var(--ink);margin:24px;}
@@ -1043,17 +1048,33 @@ function stepsDoc(){
     ${stepHtml}
     <footer>${T('Generated locally by Carino Hash — an educational walkthrough. Nothing left this device.')}${labTrace.trimmed?' '+T('Large input: steps cover the first {n} bytes.').replace('{n}',TRACE_LIMIT.toLocaleString()):''}</footer>
   </body></html>`;
-  return { html:doc, title };
+  return { html:doc, title, name };
 }
 
 /* Print preview — as Topo's report dialog: the document is shown first, in a
    frame, laid out on an A4 sheet (the doc's own 14 mm @page margins) over grey,
    with a dashed line where each page should end; on a phone the sheet is scaled
-   down to fit rather than reflowed. Print prints that frame; ✕ drops it.
+   down to fit rather than reflowed. Print prints that frame, Download saves the
+   same document as PDF or HTML (carino-pdf.js); ✕ drops it.
    The sheet, grey and page lines are screen-only, so what prints is the doc. */
 const RP_SHEET_W=688, RP_SHEET_PAD=53, RP_PAGE_H=1017;   // A4 at 96 dpi: 210 × 297 mm less 2 × 14 mm
 const RP_PAGE_PX=RP_SHEET_W+2*RP_SHEET_PAD+32;
-const rp={ seq:0, open:false };
+const rp={ seq:0, open:false, built:null, stem:'', busy:false, busyFor:0, sw:null, pagesText:'' };
+// File  PDF | HTML (carino-pdf.js): above the file name, outside any scroll;
+// Download and the name follow it. Without the engine, Download saves HTML.
+function rpFormat(){ return rp.sw?rp.sw.get():'html'; }
+function rpFileName(stem){ return stem?(window.CarinoPdf?CarinoPdf.fileName(stem,rpFormat()):stem+'.html'):''; }
+function rpLabels(){
+  $('#rpDownload').textContent=window.CarinoPdf?CarinoPdf.label(rpFormat()):T('Download HTML');
+  $('#rpName').textContent=rpFileName(rp.stem);
+}
+function rpReady(){ const off=!rp.built; $('#rpPrint').disabled=off; $('#rpDownload').disabled=off||rp.busy; }
+// carino-pdf.js loads deferred, after this script: the switch is made on first use.
+function rpInitFormat(){
+  if(rp.sw||!window.CarinoPdf) return;
+  rp.sw=CarinoPdf.formatSwitch({ onChange:rpLabels });
+  $('#rpName').before(rp.sw.el);
+}
 function rpPreviewHtml(html){
   return html.replace('</head>',`<style>
     @media screen{
@@ -1089,11 +1110,11 @@ function rpFit(){
   Object.assign(frame.style,{width:RP_PAGE_PX+'px',height:Math.round(stage.clientHeight/k)+'px',transform:`scale(${k})`,transformOrigin:'0 0'});
 }
 async function rpRefresh(){
-  const seq=++rp.seq, frame=$('#rpFrame'), btn=$('#rpPrint');
-  btn.disabled=true; $('#rpStatus').textContent='';
+  const seq=++rp.seq, frame=$('#rpFrame');
+  rp.built=null; rpReady(); $('#rpStatus').textContent='';
   let built;
   try{ built=stepsDoc(); }catch(e){ console.error(e); if(seq===rp.seq) $('#rpStatus').textContent=T('Could not build the document.'); return; }
-  $('#rpName').textContent=built.title;
+  rp.stem=built.name; rpLabels();
   await new Promise(done=>{ const shown=()=>{ frame.onload=null; done(); }; frame.onload=shown; setTimeout(shown,5000); frame.srcdoc=rpPreviewHtml(built.html); });
   if(seq!==rp.seq) return;
   let pages=0;
@@ -1113,12 +1134,14 @@ async function rpRefresh(){
     });
   }catch(e){ console.warn('Print preview: could not measure the pages.',e); }
   rpFit();
-  $('#rpStatus').textContent=pages?(pages===1?T('About 1 A4 page'):T('About {n} A4 pages').replace('{n}',pages)):'';
-  btn.disabled=false;
+  rp.pagesText=pages?(pages===1?T('About 1 A4 page'):T('About {n} A4 pages').replace('{n}',pages)):'';
+  rp.built=built; rpReady();
+  if(!rp.busy) $('#rpStatus').textContent=rp.pagesText;
 }
 function printSteps(){
   if(!labTrace){ toast(T('Open a card’s Steps walkthrough first')); return; }
   player.stop();   // pause the walkthrough behind the dialog
+  rpInitFormat();
   if(!rp.open){
     rp.open=true;
     // CarinoUI.modal keeps Tab inside (with sentinels around the frame), takes Esc
@@ -1131,7 +1154,7 @@ function printSteps(){
 }
 // Close saves nothing: drop the document and any refresh still running.
 function rpDiscard(){
-  rp.seq++; rp.open=false;
+  rp.seq++; rp.open=false; rp.built=null; rp.stem=''; rp.busy=false;
   const frame=$('#rpFrame'); frame.onload=null; frame.removeAttribute('srcdoc');
 }
 function closePreview(){ if(rp.open) CarinoUI.modal.close('rpModal'); }
@@ -1141,11 +1164,35 @@ function printPreview(){
   if(!w||$('#rpPrint').disabled) return;
   try{ w.onafterprint=()=>setTimeout(closePreview,0); w.focus(); w.print(); }catch(e){ console.error(e); }
 }
+// Download: the very document shown (not the screen-only sheet), as the File
+// switch says. PDF takes a moment: Download is off and the status says so;
+// done, the preview closes; failed, it stays open and says so.
+async function downloadPreview(){
+  const built=rp.built;
+  if(!built||rp.busy||$('#rpDownload').disabled) return;
+  const format=rpFormat(), seq=rp.seq;
+  if(!window.CarinoPdf){
+    const a=document.createElement('a'), url=URL.createObjectURL(new Blob([built.html],{type:'text/html;charset=utf-8'}));
+    a.href=url; a.download=built.name+'.html'; document.body.append(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    closePreview(); return;
+  }
+  if(format==='pdf'){ rp.busy=true; rp.busyFor=seq; rpReady(); $('#rpStatus').textContent=T('Creating the PDF…'); }
+  let r;
+  try{ r=await CarinoPdf.download({ html:built.html, name:built.name, format, title:built.title, producer:'Carino Hash' }); }
+  catch(e){ r={ ok:false, error:String(e) }; }
+  if(rp.busy&&rp.busyFor===seq) rp.busy=false;
+  if(seq!==rp.seq){ if(rp.open&&rp.built) rpReady(); return; }   // closed or redrawn meanwhile
+  if(r&&r.ok){ closePreview(); return; }
+  rpReady();
+  $('#rpStatus').textContent=format==='pdf'?T('Could not create the PDF.'):T('Could not build the document.');
+}
 $('#mPrint').addEventListener('click',printSteps);
 $('#rpPrint').addEventListener('click',printPreview);
+$('#rpDownload').addEventListener('click',downloadPreview);
 $('#rpX').addEventListener('click',closePreview);
 window.addEventListener('resize',()=>{ if(rp.open) rpFit(); });
-window.addEventListener('carino:langchange',()=>{ if(rp.open) setTimeout(()=>{ if(rp.open) rpRefresh(); },0); });
+window.addEventListener('carino:langchange',()=>{ if(rp.sw) rp.sw.relabel(); if(rp.open) setTimeout(()=>{ if(rp.open) rpRefresh(); },0); });
 
 /* ==========================================================================
    Module pages
@@ -1357,6 +1404,7 @@ document.addEventListener('DOMContentLoaded',()=>{ slices=CarinoUI.slices({ menu
 <script src="carino-theme.js" data-mark="logo.svg" data-mark-color="logo-color.svg" defer></script>
 <script src="carino-lang.js" defer></script>
 <script src="i18n.js" defer></script>
+<script src="carino-pdf.js" defer></script>
 <script src="carino-ui.js" defer></script>
 </body>
 </html>
