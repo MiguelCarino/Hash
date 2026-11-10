@@ -58,6 +58,13 @@ const I18N = {
         'Digest of this input': 'Hash de esta entrada',
         '(not computed — large input; use “Compute” on the card)': '(no calculado — entrada grande; usa “Calcular” en la tarjeta)',
         'Generated locally by Carino Hash — an educational walkthrough. Nothing left this device.': 'Generado localmente por Carino Hash — un recorrido educativo. Nada salió de este dispositivo.',
+        // Print preview
+        'Print preview': 'Vista previa de impresión',
+        '🖨 Print': '🖨 Imprimir',
+        'About 1 A4 page': 'Aprox. 1 página A4',
+        'About {n} A4 pages': 'Aprox. {n} páginas A4',
+        'Page {n}': 'Página {n}',
+        'Could not build the document.': 'No se pudo generar el documento.',
         // Lamport signature notes
         'Hash‑based one‑time signature — press <b>▶ Steps</b> to watch keygen → sign → verify → tamper on the current input.': 'Firma de un solo uso basada en hash: pulsa <b>▶ Pasos</b> para ver generación de claves → firma → verificación → manipulación sobre la entrada actual.',
         'Hash‑based one‑time signature — keygen → sign → verify → tamper': 'Firma de un solo uso basada en hash — generación de claves → firma → verificación → manipulación',
@@ -247,6 +254,13 @@ const I18N = {
         'Digest of this input': 'Hash desta entrada',
         '(not computed — large input; use “Compute” on the card)': '(não calculado — entrada grande; use “Calcular” no cartão)',
         'Generated locally by Carino Hash — an educational walkthrough. Nothing left this device.': 'Gerado localmente pelo Carino Hash — um passo a passo educativo. Nada saiu deste dispositivo.',
+        // Print preview
+        'Print preview': 'Pré-visualização de impressão',
+        '🖨 Print': '🖨 Imprimir',
+        'About 1 A4 page': 'Cerca de 1 página A4',
+        'About {n} A4 pages': 'Cerca de {n} páginas A4',
+        'Page {n}': 'Página {n}',
+        'Could not build the document.': 'Não foi possível gerar o documento.',
         'Hash‑based one‑time signature — press <b>▶ Steps</b> to watch keygen → sign → verify → tamper on the current input.': 'Assinatura de uso único baseada em hash: aperte <b>▶ Passos</b> para ver geração de chaves → assinatura → verificação → adulteração sobre a entrada atual.',
         'Hash‑based one‑time signature — keygen → sign → verify → tamper': 'Assinatura de uso único baseada em hash — geração de chaves → assinatura → verificação → adulteração',
         'The very first idea of a “digest”: add up all the bytes. Catches a stray bit; nothing more.': 'A primeiríssima ideia de um “digest”: somar todos os bytes. Pega um bit perdido; nada mais.',
@@ -432,6 +446,13 @@ const I18N = {
         'Digest of this input': 'この入力のダイジェスト',
         '(not computed — large input; use “Compute” on the card)': '（未計算 — 入力が大きいため。カードの「計算」を使ってください）',
         'Generated locally by Carino Hash — an educational walkthrough. Nothing left this device.': 'Carino Hash がローカルで生成した教育用ウォークスルーです。データは端末の外に出ていません。',
+        // Print preview
+        'Print preview': '印刷プレビュー',
+        '🖨 Print': '🖨 印刷',
+        'About 1 A4 page': 'A4 約1ページ',
+        'About {n} A4 pages': 'A4 約{n}ページ',
+        'Page {n}': '{n}ページ',
+        'Could not build the document.': '文書を作成できませんでした。',
         'Hash‑based one‑time signature — press <b>▶ Steps</b> to watch keygen → sign → verify → tamper on the current input.': 'ハッシュベースのワンタイム署名 — <b>▶ ステップ</b>を押すと、現在の入力に対する鍵生成 → 署名 → 検証 → 改ざんの流れを見られます。',
         'Hash‑based one‑time signature — keygen → sign → verify → tamper': 'ハッシュベースのワンタイム署名 — 鍵生成 → 署名 → 検証 → 改ざん',
         'The very first idea of a “digest”: add up all the bytes. Catches a stray bit; nothing more.': '「ダイジェスト」の一番最初のアイデア: 全バイトを足し合わせるだけ。ビット化けは拾えますが、それ以上のことはできません。',
@@ -617,6 +638,13 @@ const I18N = {
         'Digest of this input': 'Дайджест этого ввода',
         '(not computed — large input; use “Compute” on the card)': '(не вычислено — большой ввод; нажмите «Посчитать» на карточке)',
         'Generated locally by Carino Hash — an educational walkthrough. Nothing left this device.': 'Сгенерировано локально в Carino Hash — учебный разбор. Данные не покидали это устройство.',
+        // Print preview
+        'Print preview': 'Предпросмотр печати',
+        '🖨 Print': '🖨 Печать',
+        'About 1 A4 page': 'Около 1 страницы A4',
+        'About {n} A4 pages': 'Около {n} стр. A4',
+        'Page {n}': 'Страница {n}',
+        'Could not build the document.': 'Не удалось создать документ.',
         'Hash‑based one‑time signature — press <b>▶ Steps</b> to watch keygen → sign → verify → tamper on the current input.': 'Одноразовая подпись на основе хеша — нажмите <b>▶ Шаги</b>, чтобы увидеть генерацию ключей → подпись → проверку → подмену на текущем вводе.',
         'Hash‑based one‑time signature — keygen → sign → verify → tamper': 'Одноразовая подпись на основе хеша — генерация ключей → подпись → проверка → подмена',
         'The very first idea of a “digest”: add up all the bytes. Catches a stray bit; nothing more.': 'Самая первая идея «дайджеста»: сложить все байты. Ловит случайный бит — и не более того.',
@@ -789,6 +817,9 @@ const ATTR_I18N = [
     ['#txt', 'aria-label', 'Text to hash'],
     ['#sliceMenu', 'aria-label', 'Modules'],
     ['#resetX', 'aria-label', 'Close'],
+    ['#rpX', 'aria-label', 'Close'],
+    ['#rpX', 'title', 'Close'],
+    ['#rpFrame', 'title', 'Print preview'],
 ];
 function applyAttrI18n() {
     ATTR_I18N.forEach(([sel, attr, key]) => {

@@ -183,6 +183,7 @@
       .mod-hero{padding-top:24px;}
       .stage{padding:16px;}
     }
+    /* Print preview (#rpModal): the layout is the fleet's .rpv (carino-ui.css 18b). */
   </style>
   <!-- Colourful theme + the switch; nothing applies until data-carino-theme="color". -->
   <link rel="stylesheet" href="carino-theme.css">
@@ -352,6 +353,25 @@
         <button type="button" class="btn btn-ghost" id="resetCancel" data-i18n>Cancel</button>
         <button type="button" class="btn btn-primary" id="resetOk" data-i18n>Reset</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Print preview: "Print steps" shows the document here first; Print prints this frame, ✕ drops it.
+       Fleet .rpv layout: every control in the left column, Print at its foot. -->
+  <div class="modal-scrim rpv-scrim" id="rpModal" hidden>
+    <div class="rpv" role="dialog" aria-modal="true" aria-labelledby="rpTitle">
+      <aside class="rpv-side">
+        <div class="rpv-head">
+          <h2 class="rpv-title" id="rpTitle" data-i18n>Print preview</h2>
+          <button type="button" class="modal-x rpv-x" id="rpX" title="Close" aria-label="Close">✕</button>
+        </div>
+        <p class="rpv-status" id="rpStatus" role="status" aria-live="polite"></p>
+        <p class="rpv-name" id="rpName"></p>
+        <div class="rpv-actions">
+          <button type="button" class="btn btn-primary" id="rpPrint" disabled data-i18n>🖨 Print</button>
+        </div>
+      </aside>
+      <div class="rpv-stage" id="rpStage"><iframe id="rpFrame" class="rpv-frame" title="Print preview"></iframe></div>
     </div>
   </div>
 
@@ -900,7 +920,7 @@ function selectAlgo(id){
 }
 // Keys: Space plays and pauses, ← → step — not while typing.
 document.addEventListener('keydown',e=>{
-  if(!active||modById(active).compare||!$('#resetModal').hidden) return;
+  if(!active||modById(active).compare||!$('#resetModal').hidden||!$('#rpModal').hidden) return;
   if(e.target.closest&&e.target.closest('input,textarea,select,button,a,[contenteditable]')) return;
   if(e.key===' '){ e.preventDefault(); player.play(); }
   else if(e.key==='ArrowRight'){ e.preventDefault(); player.step(); }
@@ -945,9 +965,9 @@ function lamportTrace(bytes, rec){
    ========================================================================== */
 let LOGO_URI='';
 (function(){ try{ fetch('logo.webp').then(r=>r.ok?r.blob():null).then(b=>{ if(!b)return; const fr=new FileReader(); fr.onload=()=>LOGO_URI=fr.result; fr.readAsDataURL(b); }).catch(()=>{}); }catch(e){} })();
-// Print the FULL step-by-step of the algorithm currently in the lab.
-function printSteps(){
-  if(!labTrace){ toast(T('Open a card’s Steps walkthrough first')); return; }
+// The FULL step-by-step of the algorithm currently in the lab, as one printable
+// HTML document: { html, title }. The preview shows it and Print prints it.
+function stepsDoc(){
   const a=labTrace.algo, steps=labTrace.steps;
   const now=new Date(); const p2=n=>String(n).padStart(2,'0'); const stamp=now.getFullYear()+'-'+p2(now.getMonth()+1)+'-'+p2(now.getDate())+' '+p2(now.getHours())+':'+p2(now.getMinutes());
   const card=$('#v-'+a.id), cardVal=card?(card.textContent||'').trim():(a.fn&&!a.signature&&currentBytes.length<=AUTO_DIGEST_LIMIT?a.fn(currentBytes,null):'');
@@ -983,7 +1003,8 @@ function printSteps(){
     </div>`;
   }).join('');
 
-  const doc=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(T('{name} — steps').replace('{name}',a.name))}</title><style>
+  const title=T('{name} — steps').replace('{name}',a.name);
+  const doc=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>
     :root{--primary:#b45309;--ink:#1f2937;--muted:#6b7280;--line:#e5e7eb;--blue:#0369a1;} html{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     *{box-sizing:border-box;} body{font:12px/1.55 'IBM Plex Sans',Arial,sans-serif;color:var(--ink);margin:24px;}
     sub,sup{font-size:0.8em;}
@@ -1022,13 +1043,109 @@ function printSteps(){
     ${stepHtml}
     <footer>${T('Generated locally by Carino Hash — an educational walkthrough. Nothing left this device.')}${labTrace.trimmed?' '+T('Large input: steps cover the first {n} bytes.').replace('{n}',TRACE_LIMIT.toLocaleString()):''}</footer>
   </body></html>`;
+  return { html:doc, title };
+}
 
-  const ifr=document.createElement('iframe'); ifr.setAttribute('aria-hidden','true'); ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;'; document.body.appendChild(ifr);
-  const w=ifr.contentWindow,d=w.document; d.open(); d.write(doc); d.close();
-  const cleanup=()=>setTimeout(()=>{try{ifr.remove();}catch(e){}},500); w.onafterprint=cleanup;
-  const go=()=>{try{w.focus();w.print();}catch(e){cleanup();}}; const img=d.querySelector('img'); if(img&&!img.complete){img.onload=go;img.onerror=go;} else setTimeout(go,60);
+/* Print preview — as Topo's report dialog: the document is shown first, in a
+   frame, laid out on an A4 sheet (the doc's own 14 mm @page margins) over grey,
+   with a dashed line where each page should end; on a phone the sheet is scaled
+   down to fit rather than reflowed. Print prints that frame; ✕ drops it.
+   The sheet, grey and page lines are screen-only, so what prints is the doc. */
+const RP_SHEET_W=688, RP_SHEET_PAD=53, RP_PAGE_H=1017;   // A4 at 96 dpi: 210 × 297 mm less 2 × 14 mm
+const RP_PAGE_PX=RP_SHEET_W+2*RP_SHEET_PAD+32;
+const rp={ seq:0, open:false };
+function rpPreviewHtml(html){
+  return html.replace('</head>',`<style>
+    @media screen{
+      html{background:#d6d8dc;}
+      body{box-sizing:content-box;width:${RP_SHEET_W}px;padding:${RP_SHEET_PAD}px;margin:16px auto 24px;background:#fff;position:relative;box-shadow:0 1px 6px rgba(0,0,0,.28);}
+      .rp-break{position:absolute;left:0;right:0;height:0;border-top:1.5px dashed #9aa0a8;pointer-events:none;}
+      .rp-break span{position:absolute;left:8px;top:3px;font:10px ui-monospace,monospace;color:#6b7280;}
+    }
+    @media print{.rp-break{display:none !important;}}
+  </style></head>`);
+}
+// Where the pages should end: blocks the doc keeps whole (break-inside: avoid,
+// each step) move to the next page; anything else is cut at the page edge.
+function rpPageBreaks(d){
+  const body=d.body, top0=body.getBoundingClientRect().top+RP_SHEET_PAD, breaks=[]; let end=RP_PAGE_H;
+  for(const el of body.children){
+    if(el.classList.contains('rp-break')) continue;
+    const r=el.getBoundingClientRect(), t=r.top-top0, b=r.bottom-top0;
+    const avoid=d.defaultView.getComputedStyle(el).breakInside==='avoid';
+    while(b>end+0.5){
+      if(avoid&&t<end&&t>end-RP_PAGE_H+0.5&&b-t<=RP_PAGE_H){ breaks.push(t); end=t+RP_PAGE_H; }
+      else { breaks.push(end); end+=RP_PAGE_H; }
+    }
+  }
+  return breaks;
+}
+function rpFit(){
+  const frame=$('#rpFrame'), stage=$('#rpStage');
+  Object.assign(frame.style,{width:'',height:'',transform:'',transformOrigin:''});
+  const w=stage.clientWidth;
+  if(!w||w>=RP_PAGE_PX) return;
+  const k=w/RP_PAGE_PX;
+  Object.assign(frame.style,{width:RP_PAGE_PX+'px',height:Math.round(stage.clientHeight/k)+'px',transform:`scale(${k})`,transformOrigin:'0 0'});
+}
+async function rpRefresh(){
+  const seq=++rp.seq, frame=$('#rpFrame'), btn=$('#rpPrint');
+  btn.disabled=true; $('#rpStatus').textContent='';
+  let built;
+  try{ built=stepsDoc(); }catch(e){ console.error(e); if(seq===rp.seq) $('#rpStatus').textContent=T('Could not build the document.'); return; }
+  $('#rpName').textContent=built.title;
+  await new Promise(done=>{ const shown=()=>{ frame.onload=null; done(); }; frame.onload=shown; setTimeout(shown,5000); frame.srcdoc=rpPreviewHtml(built.html); });
+  if(seq!==rp.seq) return;
+  let pages=0;
+  try{
+    const d=frame.contentDocument;
+    // Keys pressed inside the preview stay in its document: Esc still closes.
+    d.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); closePreview(); } });
+    if(d.fonts) await d.fonts.ready;
+    await Promise.all([...d.images].map(img=>img.complete?null:new Promise(r=>{ img.onload=img.onerror=r; })));
+    if(seq!==rp.seq) return;
+    const breaks=rpPageBreaks(d);
+    pages=breaks.length+1;
+    breaks.forEach((y,i)=>{
+      const line=d.createElement('div'); line.className='rp-break'; line.style.top=(RP_SHEET_PAD+y)+'px';
+      const tag=d.createElement('span'); tag.textContent=T('Page {n}').replace('{n}',i+2); line.append(tag);
+      d.body.append(line);
+    });
+  }catch(e){ console.warn('Print preview: could not measure the pages.',e); }
+  rpFit();
+  $('#rpStatus').textContent=pages?(pages===1?T('About 1 A4 page'):T('About {n} A4 pages').replace('{n}',pages)):'';
+  btn.disabled=false;
+}
+function printSteps(){
+  if(!labTrace){ toast(T('Open a card’s Steps walkthrough first')); return; }
+  player.stop();   // pause the walkthrough behind the dialog
+  if(!rp.open){
+    rp.open=true;
+    // CarinoUI.modal keeps Tab inside (with sentinels around the frame), takes Esc
+    // in the capture phase, counts a backdrop click only when the press started
+    // there too, and puts focus back on the opener.
+    CarinoUI.modal.open('rpModal',{ returnFocus:document.activeElement, onClose:rpDiscard });
+    $('#rpX').focus();
+  }
+  return rpRefresh();
+}
+// Close saves nothing: drop the document and any refresh still running.
+function rpDiscard(){
+  rp.seq++; rp.open=false;
+  const frame=$('#rpFrame'); frame.onload=null; frame.removeAttribute('srcdoc');
+}
+function closePreview(){ if(rp.open) CarinoUI.modal.close('rpModal'); }
+// Print the previewed document itself: the frame's own print, as Topo does.
+function printPreview(){
+  const w=$('#rpFrame').contentWindow;
+  if(!w||$('#rpPrint').disabled) return;
+  try{ w.onafterprint=()=>setTimeout(closePreview,0); w.focus(); w.print(); }catch(e){ console.error(e); }
 }
 $('#mPrint').addEventListener('click',printSteps);
+$('#rpPrint').addEventListener('click',printPreview);
+$('#rpX').addEventListener('click',closePreview);
+window.addEventListener('resize',()=>{ if(rp.open) rpFit(); });
+window.addEventListener('carino:langchange',()=>{ if(rp.open) setTimeout(()=>{ if(rp.open) rpRefresh(); },0); });
 
 /* ==========================================================================
    Module pages
